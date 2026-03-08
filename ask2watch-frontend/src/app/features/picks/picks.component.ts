@@ -36,7 +36,10 @@ export class PicksComponent implements OnInit {
   }
 
   loadPicks(): void {
-    this.pickService.getAllPicks().subscribe((data) => this.picks.set(data));
+    this.pickService.getAllPicks().subscribe({
+      next: (data) => this.picks.set(data),
+      error: (err) => console.error('Error loading picks:', err),
+    });
   }
 
   onItemClick(item: PickResponse): void {

@@ -28,8 +28,14 @@ export class HomeComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.mediaService.getWatchedMovies().subscribe((data) => this.watchedMovies.set(data.slice(0, 10)));
-    this.pickService.getCurrentPicks().subscribe((data) => this.picks.set(data));
+    this.mediaService.getWatchedMovies().subscribe({
+      next: (data) => this.watchedMovies.set(data.slice(0, 10)),
+      error: (err) => console.error('Error loading watched movies:', err),
+    });
+    this.pickService.getCurrentPicks().subscribe({
+      next: (data) => this.picks.set(data),
+      error: (err) => console.error('Error loading picks:', err),
+    });
   }
 
   onWatchedClick(item: WatchedMediaResponse): void {

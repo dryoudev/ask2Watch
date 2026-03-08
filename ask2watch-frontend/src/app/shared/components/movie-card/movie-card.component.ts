@@ -16,6 +16,7 @@ export class MovieCardComponent implements OnInit {
   index = input(0);
   compact = input(false);
   cardClick = output<WatchedMediaResponse>();
+  ratingChanged = output<{ watchedId: number; newRating: number }>();
 
   currentRating = signal(0);
 
@@ -38,15 +39,14 @@ export class MovieCardComponent implements OnInit {
     const request: UpdateWatchedRequest = {
       userRating: newRating,
     };
-    this.mediaService.updateWatched(this.watched().watchedId, request).subscribe(
-      (updated) => {
-        // Update the watched signal with new data
-        const updatedWatched = { ...this.watched(), userRating: newRating };
+    this.mediaService.updateWatched(this.watched().watchedId, request).subscribe({
+      next: (updated) => {
+        this.ratingChanged.emit({ watchedId: this.watched().watchedId, newRating });
       },
-      (error) => {
+      error: (error) => {
         console.error('Failed to update rating', error);
         this.currentRating.set(this.watched().userRating ?? 0);
-      }
-    );
+      },
+    });
   }
 }

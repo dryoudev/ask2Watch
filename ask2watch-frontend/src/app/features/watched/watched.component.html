@@ -42,10 +42,10 @@
       <div class="flex items-center gap-2">
         <select [(ngModel)]="sortBy" class="bg-muted/30 border border-border/50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer">
           <option value="default">Sort by</option>
-          <option value="rating-asc">Rating ↓</option>
-          <option value="rating-desc">Rating ↑</option>
-          <option value="year-asc">Year ↓</option>
-          <option value="year-desc">Year ↑</option>
+          <option value="rating-desc">Rating ↓</option>
+          <option value="rating-asc">Rating ↑</option>
+          <option value="year-desc">Year ↓</option>
+          <option value="year-asc">Year ↑</option>
         </select>
         <select [(ngModel)]="filterGenre" class="bg-muted/30 border border-border/50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer">
           <option value="">All Genres</option>
@@ -54,7 +54,7 @@
           <option value="comedy">Comedy</option>
           <option value="thriller">Thriller</option>
           <option value="horror">Horror</option>
-          <option value="scifi">Sci-Fi</option>
+          <option value="sci-fi">Sci-Fi</option>
           <option value="animation">Animation</option>
         </select>
       </div>
@@ -64,14 +64,14 @@
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
       @if (activeTab() === 'movies') {
         @for (item of filteredMovies(); track item.watchedId) {
-          <app-movie-card [watched]="item" [index]="$index" (cardClick)="onItemClick($event)" />
+          <app-movie-card [watched]="item" [index]="$index" (cardClick)="onItemClick($event)" (ratingChanged)="onRatingChanged($event)" />
         }
         @if (filteredMovies().length === 0) {
           <p class="col-span-full text-muted-foreground text-sm">No movies found.</p>
         }
       } @else {
         @for (item of filteredSeries(); track item.watchedId) {
-          <app-movie-card [watched]="item" [index]="$index" (cardClick)="onItemClick($event)" />
+          <app-movie-card [watched]="item" [index]="$index" (cardClick)="onItemClick($event)" (ratingChanged)="onRatingChanged($event)" />
         }
         @if (filteredSeries().length === 0) {
           <p class="col-span-full text-muted-foreground text-sm">No series found.</p>

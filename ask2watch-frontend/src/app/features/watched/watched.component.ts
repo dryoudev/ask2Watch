@@ -72,12 +72,32 @@ export class WatchedComponent implements OnInit {
   constructor(private mediaService: MediaService) {}
 
   ngOnInit(): void {
-    this.mediaService.getWatchedMovies().subscribe((data) => this.movies.set(data));
-    this.mediaService.getWatchedSeries().subscribe((data) => this.series.set(data));
+    this.mediaService.getWatchedMovies().subscribe({
+      next: (data) => this.movies.set(data),
+      error: (err) => console.error('Error loading movies:', err),
+    });
+    this.mediaService.getWatchedSeries().subscribe({
+      next: (data) => this.series.set(data),
+      error: (err) => console.error('Error loading series:', err),
+    });
   }
 
   onItemClick(item: WatchedMediaResponse): void {
     this.selectedItem.set(item);
     this.dialogOpen.set(true);
+  }
+
+  onRatingChanged(event: { watchedId: number; newRating: number }): void {
+    // Update the rating in both movies and series arrays
+    this.movies.update((items) =>
+      items.map((item) =>
+        item.watchedId === event.watchedId ? { ...item, userRating: event.newRating } : item
+      )
+    );
+    this.series.update((items) =>
+      items.map((item) =>
+        item.watchedId === event.watchedId ? { ...item, userRating: event.newRating } : item
+      )
+    );
   }
 }
