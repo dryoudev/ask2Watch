@@ -71,6 +71,67 @@ public class TmdbService {
         }
     }
 
+    public void enrichMediaByTmdbId(Media media) {
+        try {
+            if (media.getMediaType() == MediaType.MOVIE) {
+                enrichMovieByTmdbId(media);
+            } else {
+                enrichSeriesByTmdbId(media);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to enrich media '{}' (tmdbId: {}): {}",
+                    media.getTitle(), media.getTmdbId(), e.getMessage());
+        }
+    }
+
+    private void enrichMovieByTmdbId(Media media) {
+        TmdbMovieDetails details = getMovieDetails(media.getTmdbId());
+        if (details == null) return;
+
+        media.setPosterPath(details.getPosterPath());
+        media.setSynopsis(details.getOverview());
+
+        if (details.getGenres() != null && !details.getGenres().isEmpty()) {
+            media.setGenres(details.getGenres().stream()
+                    .map(TmdbMovieDetails.Genre::getName)
+                    .collect(Collectors.joining(", ")));
+        }
+
+        if (details.getCredits() != null) {
+            media.setStars(extractCast(details.getCredits(), 5));
+            media.setDirectors(extractDirectors(details.getCredits()));
+        }
+
+        media.setRated(extractMovieCertification(details));
+    }
+
+    private void enrichSeriesByTmdbId(Media media) {
+        TmdbTvDetails details = getTvDetails(media.getTmdbId());
+        if (details == null) return;
+
+        media.setPosterPath(details.getPosterPath());
+        media.setSynopsis(details.getOverview());
+        media.setSeasons(details.getNumberOfSeasons());
+
+        if (details.getGenres() != null && !details.getGenres().isEmpty()) {
+            media.setGenres(details.getGenres().stream()
+                    .map(TmdbTvDetails.Genre::getName)
+                    .collect(Collectors.joining(", ")));
+        }
+
+        if (details.getCredits() != null) {
+            media.setStars(extractCast(details.getCredits(), 5));
+        }
+
+        if (details.getCreatedBy() != null && !details.getCreatedBy().isEmpty()) {
+            media.setDirectors(details.getCreatedBy().stream()
+                    .map(TmdbTvDetails.Creator::getName)
+                    .collect(Collectors.joining(", ")));
+        }
+
+        media.setRated(extractTvCertification(details));
+    }
+
     private void enrichMovie(Media media, TmdbFindResponse findResponse) {
         if (findResponse.getMovieResults() == null || findResponse.getMovieResults().isEmpty()) {
             log.warn("No TMDB movie result for IMDb ID: {}", media.getImdbId());

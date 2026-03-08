@@ -3,6 +3,7 @@ package com.ask2watch.service;
 import com.ask2watch.dto.mapper.MediaMapper;
 import com.ask2watch.dto.media.PickRequest;
 import com.ask2watch.dto.media.PickResponse;
+import com.ask2watch.exception.ResourceNotFoundException;
 import com.ask2watch.model.Media;
 import com.ask2watch.model.PickOfWeek;
 import com.ask2watch.model.User;
@@ -24,6 +25,7 @@ public class PickService {
     private final PickOfWeekRepository pickOfWeekRepository;
     private final MediaRepository mediaRepository;
     private final UserRepository userRepository;
+    private final TmdbService tmdbService;
 
     public List<PickResponse> getCurrentPicks(Long userId) {
         LocalDate startOfWeek = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
@@ -48,15 +50,25 @@ public class PickService {
 
     public PickResponse addPick(Long userId, PickRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         // Find or create media by TMDB ID
         Media media = mediaRepository.findByTmdbId(Math.toIntExact(request.getTmdbId()))
+                .map(existing -> {
+                    // Enrich existing media if missing data
+                    if (existing.getPosterPath() == null || existing.getSynopsis() == null) {
+                        tmdbService.enrichMediaByTmdbId(existing);
+                        return mediaRepository.save(existing);
+                    }
+                    return existing;
+                })
                 .orElseGet(() -> {
                     Media newMedia = new Media();
                     newMedia.setTmdbId(Math.toIntExact(request.getTmdbId()));
                     newMedia.setTitle(request.getTitle());
                     newMedia.setMediaType(request.getMediaType());
+                    // Enrich with complete TMDB data
+                    tmdbService.enrichMediaByTmdbId(newMedia);
                     return mediaRepository.save(newMedia);
                 });
 
@@ -75,7 +87,7 @@ public class PickService {
     public void removePick(Long userId, Long pickId) {
         PickOfWeek pick = pickOfWeekRepository.findById(pickId)
                 .filter(p -> p.getUser().getId().equals(userId))
-                .orElseThrow(() -> new RuntimeException("Pick not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Pick not found"));
 
         pickOfWeekRepository.delete(pick);
     }

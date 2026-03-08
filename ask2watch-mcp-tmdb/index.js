@@ -7,10 +7,17 @@ dotenv.config();
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
+const MCP_AUTH_EMAIL = process.env.MCP_AUTH_EMAIL;
+const MCP_AUTH_PASSWORD = process.env.MCP_AUTH_PASSWORD;
 const BASE_URL = "https://api.themoviedb.org/3";
 
 if (!TMDB_API_KEY) {
   console.error("TMDB_API_KEY environment variable is required");
+  process.exit(1);
+}
+
+if (!MCP_AUTH_EMAIL || !MCP_AUTH_PASSWORD) {
+  console.error("MCP_AUTH_EMAIL and MCP_AUTH_PASSWORD environment variables are required");
   process.exit(1);
 }
 
@@ -22,7 +29,7 @@ async function getToken() {
   const res = await fetch(`${BACKEND_URL}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "admin@ask2watch.com", password: "admin" }),
+    body: JSON.stringify({ email: MCP_AUTH_EMAIL, password: MCP_AUTH_PASSWORD }),
   });
   if (!res.ok) throw new Error(`Login failed: ${res.status}`);
   const data = await res.json();
@@ -205,6 +212,34 @@ server.tool(
     const data = await tmdbFetch(`/${media_type}/${tmdb_id}/recommendations`);
     const results = data.results.slice(0, 10).map(formatMovie);
     return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
+  }
+);
+
+server.tool(
+  "get_movie_details",
+  "Get complete movie/TV details from TMDB by ID (poster, genres, rating, directors, cast, etc.)",
+  {
+    tmdb_id: z.number().describe("TMDB ID of the movie or TV show"),
+    media_type: z.enum(["movie", "tv"]).describe("Type: movie or tv"),
+  },
+  async ({ tmdb_id, media_type }) => {
+    const data = await tmdbFetch(`/${media_type}/${tmdb_id}`, {
+      append_to_response: "credits"
+    });
+    const details = {
+      tmdb_id: data.id,
+      title: data.title || data.name,
+      year: (data.release_date || data.first_air_date || "").substring(0, 4),
+      poster_path: data.poster_path,
+      overview: data.overview,
+      vote_average: data.vote_average,
+      genres: data.genres?.map(g => g.name).join(", ") || null,
+      directors: data.credits?.crew?.filter(c => c.job === "Director").map(d => d.name).join(", ") || null,
+      stars: data.credits?.cast?.slice(0, 5).map(a => a.name).join(", ") || null,
+      runtime_mins: data.runtime || data.episode_run_time?.[0] || null,
+      rated: data.rated || null,
+    };
+    return { content: [{ type: "text", text: JSON.stringify(details, null, 2) }] };
   }
 );
 
