@@ -1,0 +1,31 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ask2watch
+    username: ask2watch
+    password: ask2watch
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  sql:
+    init:
+      mode: always
+
+server:
+  port: 8080
+
+tmdb:
+  api-key: ${TMDB_API_KEY:2d6be03989ed15b3acafc07caa6b5260}
+  base-url: https://api.themoviedb.org/3
+  image-base-url: https://image.tmdb.org/t/p
+
+jwt:
+  secret: ${JWT_SECRET:ask2watch-dev-secret-key-minimum-32-characters-long}
+  expiration: 86400000
+
+anthropic:
+  api-key: ${ANTHROPIC_API_KEY:}
+  model: claude-sonnet-4-6
