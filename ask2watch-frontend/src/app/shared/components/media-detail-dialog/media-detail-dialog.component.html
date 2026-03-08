@@ -1,0 +1,128 @@
+@if (open() && media) {
+  <!-- Overlay -->
+  <div class="fixed inset-0 bg-black/70 z-50" (click)="close()"></div>
+
+  <!-- Dialog -->
+  <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-51
+              w-[95%] max-w-2xl max-h-[90vh] overflow-y-auto glass-card p-6">
+
+    <!-- Close button -->
+    <button (click)="close()" class="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+      </svg>
+    </button>
+
+    <div class="flex flex-col sm:flex-row gap-6">
+      <!-- Poster -->
+      <div class="w-full sm:w-1/3 flex-shrink-0">
+        <img [src]="poster" [alt]="media.title" class="w-full rounded-lg aspect-[2/3] object-cover" />
+      </div>
+
+      <!-- Details -->
+      <div class="flex-1 space-y-4">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            @if (media.mediaType === 'MOVIE') {
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-primary">
+                <rect width="18" height="18" x="3" y="3" rx="2"/><line x1="7" x2="7" y1="3" y2="21"/><line x1="17" x2="17" y1="3" y2="21"/>
+              </svg>
+            } @else {
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-accent">
+                <rect width="20" height="15" x="2" y="7" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/>
+              </svg>
+            }
+            <h2 class="text-xl font-semibold">{{ media.title }}</h2>
+          </div>
+
+          <!-- Badges -->
+          <div class="flex flex-wrap gap-2 text-xs text-muted-foreground">
+            <span class="bg-muted px-2 py-1 rounded">{{ media.year }}</span>
+            @if (media.mediaType === 'MOVIE' && media.runtimeMins) {
+              <span class="bg-muted px-2 py-1 rounded">{{ media.runtimeMins | duration }}</span>
+            }
+            @if (media.mediaType === 'SERIES' && media.seasons) {
+              <span class="bg-muted px-2 py-1 rounded">{{ media.seasons }} season{{ media.seasons > 1 ? 's' : '' }}</span>
+            }
+            @if (media.rated) {
+              <span class="bg-muted px-2 py-1 rounded">{{ media.rated }}</span>
+            }
+            <span class="bg-muted px-2 py-1 rounded">{{ media.genres }}</span>
+          </div>
+        </div>
+
+        <!-- IMDb Rating -->
+        @if (media.imdbRating) {
+          <div class="flex items-center gap-1 text-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" class="text-gold">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+            <span class="text-gold font-semibold">{{ media.imdbRating }}/10</span>
+            <span class="text-muted-foreground">IMDb</span>
+          </div>
+        }
+
+        <!-- User Rating -->
+        @if (isWatched && watchedData?.userRating) {
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-muted-foreground">Your rating:</span>
+            <app-star-rating [rating]="watchedData!.userRating!" [size]="18" />
+          </div>
+        }
+
+        <!-- Synopsis -->
+        @if (media.synopsis) {
+          <p class="text-sm text-muted-foreground leading-relaxed">{{ media.synopsis }}</p>
+        }
+
+        <!-- Director / Creator -->
+        @if (media.directors) {
+          <div class="text-sm">
+            <span class="text-muted-foreground">{{ media.mediaType === 'SERIES' ? 'Creator' : 'Director' }}:</span>
+            <span class="ml-1">{{ media.directors }}</span>
+          </div>
+        }
+
+        <!-- Cast -->
+        @if (starsArray.length > 0) {
+          <div class="text-sm">
+            <span class="text-muted-foreground">Cast:</span>
+            <span class="ml-1">{{ media.stars }}</span>
+          </div>
+        }
+
+        <!-- Watch date -->
+        @if (isWatched && watchedData?.dateWatched) {
+          <div class="text-sm text-muted-foreground">
+            Watched on {{ watchedData!.dateWatched }}
+          </div>
+        }
+
+        <!-- Comment -->
+        @if (isWatched) {
+          <div class="border-t border-border pt-3 mt-3">
+            @if (watchedData?.comment && !showCommentInput()) {
+              <p class="text-sm italic text-muted-foreground">"{{ watchedData!.comment }}"</p>
+              <button (click)="showCommentInput.set(true); commentText.set(watchedData!.comment!)"
+                      class="text-xs text-primary mt-1 cursor-pointer">Edit comment</button>
+            } @else if (!showCommentInput()) {
+              <button (click)="showCommentInput.set(true)"
+                      class="text-xs text-primary cursor-pointer">Add a comment</button>
+            }
+
+            @if (showCommentInput()) {
+              <textarea [(ngModel)]="commentText"
+                        class="w-full bg-muted border border-border rounded-lg p-2 text-sm mt-2 resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                        rows="3" placeholder="Write your thoughts...">
+              </textarea>
+              <div class="flex gap-2 mt-2">
+                <button (click)="saveComment()" class="bg-primary text-white text-xs px-3 py-1.5 rounded-lg cursor-pointer">Save</button>
+                <button (click)="showCommentInput.set(false)" class="text-xs text-muted-foreground cursor-pointer">Cancel</button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}

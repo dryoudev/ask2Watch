@@ -1,0 +1,28 @@
+<div [class]="'group animate-fade-in cursor-pointer ' + (compact() ? 'w-[160px] flex-shrink-0' : '')"
+     [style.animation-delay]="delay"
+     [style.opacity]="0"
+     (click)="cardClick.emit(pick())">
+  <div class="relative overflow-hidden rounded-lg card-hover">
+    <img [src]="poster" [alt]="pick().media.title"
+         class="w-full aspect-[2/3] object-cover" loading="lazy" />
+    <div class="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+    <!-- Badges (top-right) -->
+    <div class="absolute top-2 right-2 flex flex-col gap-1">
+      <span class="bg-primary/90 text-white text-xs px-2 py-1 rounded font-semibold">Pick</span>
+      @if (pick().media.imdbRating) {
+        <div class="bg-gold text-gold-foreground px-2 py-1 rounded text-xs font-bold flex items-center gap-1">
+          <span>★</span>
+          <span>{{ pick().media.imdbRating }}</span>
+        </div>
+      }
+    </div>
+  </div>
+  <div class="mt-2 space-y-1">
+    <h3 class="text-sm font-semibold leading-tight line-clamp-1">{{ pick().media.title }}</h3>
+    <div class="flex items-center gap-2 text-xs text-muted-foreground">
+      <span>{{ pick().media.year }}</span>
+      <span class="text-primary">&bull;</span>
+      <span>{{ pick().media.genres }}</span>
+    </div>
+  </div>
+</div>

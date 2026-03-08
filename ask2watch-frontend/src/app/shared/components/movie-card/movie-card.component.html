@@ -1,0 +1,31 @@
+<div [class]="'group animate-fade-in cursor-pointer ' + (compact() ? 'w-[160px] flex-shrink-0' : '')"
+     [style.animation-delay]="delay"
+     [style.opacity]="0"
+     (click)="cardClick.emit(watched())">
+  <div class="relative overflow-hidden rounded-lg card-hover">
+    <img [src]="poster" [alt]="watched().media.title"
+         class="w-full aspect-[2/3] object-cover" loading="lazy" />
+    <!-- IMDb Rating Badge -->
+    @if (watched().media.imdbRating) {
+      <div class="absolute top-2 right-2 bg-gold text-gold-foreground px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1">
+        <span>★</span>
+        <span>{{ watched().media.imdbRating }}</span>
+      </div>
+    }
+    <div class="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+  </div>
+  <div class="mt-2 space-y-1">
+    <h3 class="text-sm font-semibold leading-tight line-clamp-1">{{ watched().media.title }}</h3>
+    <div (click)="$event.stopPropagation()">
+      <app-star-rating [rating]="currentRating()" [size]="14" [editable]="true" (ratingChanged)="onRatingChange($event)" />
+    </div>
+    @if (watched().dateWatched) {
+      <div class="flex items-center gap-1 text-xs text-muted-foreground">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>
+        </svg>
+        <span>{{ watched().dateWatched }}</span>
+      </div>
+    }
+  </div>
+</div>
