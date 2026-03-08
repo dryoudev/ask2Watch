@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/test
+    username: test
+    password: test
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  sql:
+    init:
+      mode: never
+
+jwt:
+  secret: test-secret-key-minimum-32-characters-long!!
+  expiration: 3600000
+
+anthropic:
+  api-key: test-key-not-used
+  model: claude-test
+
+tmdb:
+  api-key: test-tmdb-key-not-used
+
+app:
+  csv-import:
+    enabled: false
