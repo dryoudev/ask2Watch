@@ -14,8 +14,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -27,7 +30,10 @@ public class AgentService {
     private final ObjectMapper objectMapper;
     private final String model;
     private final String tmdbApiKey;
-    private final Map<Long, List<ChatMessage>> conversationHistory = new ConcurrentHashMap<>();
+    private final Cache<Long, List<ChatMessage>> conversationHistory = Caffeine.newBuilder()
+            .maximumSize(1000)
+            .expireAfterAccess(1, TimeUnit.HOURS)
+            .build();
 
     public AgentService(
             @Value("${anthropic.api-key}") String apiKey,
@@ -55,7 +61,7 @@ public class AgentService {
     }
 
     public ChatResponse chat(Long userId, String userMessage) {
-        List<ChatMessage> history = conversationHistory.computeIfAbsent(userId, k -> new ArrayList<>());
+        List<ChatMessage> history = conversationHistory.get(userId, k -> new ArrayList<>());
         history.add(new ChatMessage("user", userMessage));
         trimHistory(history);
 
@@ -67,7 +73,7 @@ public class AgentService {
     }
 
     public void clearHistory(Long userId) {
-        conversationHistory.remove(userId);
+        conversationHistory.invalidate(userId);
     }
 
     private String buildSystemPrompt(Long userId) {
