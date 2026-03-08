@@ -3,6 +3,8 @@ package com.ask2watch.service;
 import com.ask2watch.dto.auth.AuthResponse;
 import com.ask2watch.dto.auth.LoginRequest;
 import com.ask2watch.dto.auth.RegisterRequest;
+import com.ask2watch.exception.AuthenticationException;
+import com.ask2watch.exception.DuplicateResourceException;
 import com.ask2watch.model.User;
 import com.ask2watch.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +21,10 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+                .orElseThrow(() -> new AuthenticationException("Invalid credentials"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new AuthenticationException("Invalid credentials");
         }
 
         String token = jwtService.generateToken(user);
@@ -31,7 +33,7 @@ public class AuthService {
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already in use");
+            throw new DuplicateResourceException("Email already in use");
         }
 
         User user = User.builder()

@@ -134,8 +134,8 @@ public class AgentService {
 
             return processResponse(responseJson, systemPrompt, messages);
         } catch (Exception e) {
-            log.error("Claude API call failed: {}", e.getMessage());
-            return "Désolé, je ne peux pas répondre pour le moment. Erreur: " + e.getMessage();
+            log.error("Claude API call failed", e);
+            return "Désolé, je ne peux pas répondre pour le moment. Veuillez réessayer.";
         }
     }
 
@@ -210,8 +210,8 @@ public class AgentService {
                 default -> "Unknown tool: " + toolName;
             };
         } catch (Exception e) {
-            log.error("Tool execution failed for {}: {}", toolName, e.getMessage());
-            return "Error executing tool: " + e.getMessage();
+            log.error("Tool execution failed for {}", toolName, e);
+            return "Error executing tool";
         }
     }
 

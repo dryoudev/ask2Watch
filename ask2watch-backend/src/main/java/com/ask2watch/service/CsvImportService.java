@@ -9,8 +9,8 @@ import com.ask2watch.repository.MediaRepository;
 import com.ask2watch.repository.UserRepository;
 import com.ask2watch.repository.UserWatchedRepository;
 import com.opencsv.bean.CsvToBeanBuilder;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,7 +23,6 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class CsvImportService {
 
@@ -32,6 +31,22 @@ public class CsvImportService {
     private final UserWatchedRepository userWatchedRepository;
     private final TmdbService tmdbService;
     private final PasswordEncoder passwordEncoder;
+    private final String defaultAdminPassword;
+
+    public CsvImportService(
+            MediaRepository mediaRepository,
+            UserRepository userRepository,
+            UserWatchedRepository userWatchedRepository,
+            TmdbService tmdbService,
+            PasswordEncoder passwordEncoder,
+            @Value("${app.default-admin-password}") String defaultAdminPassword) {
+        this.mediaRepository = mediaRepository;
+        this.userRepository = userRepository;
+        this.userWatchedRepository = userWatchedRepository;
+        this.tmdbService = tmdbService;
+        this.passwordEncoder = passwordEncoder;
+        this.defaultAdminPassword = defaultAdminPassword;
+    }
 
     public void importAll() {
         if (mediaRepository.count() > 0) {
@@ -111,11 +126,14 @@ public class CsvImportService {
 
     private User createDefaultUser() {
         return userRepository.findByEmail("admin@ask2watch.com")
-                .orElseGet(() -> userRepository.save(User.builder()
-                        .username("admin")
-                        .email("admin@ask2watch.com")
-                        .passwordHash(passwordEncoder.encode("admin"))
-                        .build()));
+                .orElseGet(() -> {
+                    log.info("Creating default admin user with configured password");
+                    return userRepository.save(User.builder()
+                            .username("admin")
+                            .email("admin@ask2watch.com")
+                            .passwordHash(passwordEncoder.encode(defaultAdminPassword))
+                            .build());
+                });
     }
 
     private void linkAllMediaToUser(User user) {
