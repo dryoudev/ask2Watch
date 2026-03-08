@@ -1,0 +1,14 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="64" height="64" rx="12" fill="hsl(0, 72%, 51%)"/>
+
+  <!-- Eye symbol (watching theme) -->
+  <circle cx="32" cy="30" r="12" fill="hsl(0, 0%, 95%)"/>
+  <circle cx="32" cy="30" r="7" fill="hsl(0, 72%, 51%)"/>
+  <circle cx="34" cy="28" r="3" fill="hsl(0, 0%, 95%)"/>
+
+  <!-- Movie reel accent (bottom) -->
+  <circle cx="20" cy="48" r="3" fill="hsl(210, 70%, 50%)" opacity="0.8"/>
+  <circle cx="32" cy="48" r="3" fill="hsl(210, 70%, 50%)" opacity="0.8"/>
+  <circle cx="44" cy="48" r="3" fill="hsl(210, 70%, 50%)" opacity="0.8"/>
+</svg>
