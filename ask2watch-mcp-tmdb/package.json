@@ -1,0 +1,9 @@
+{
+  "name": "ask2watch-mcp-tmdb",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "dotenv": "^17.3.1"
+  }
+}
