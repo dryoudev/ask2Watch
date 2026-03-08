@@ -1,8 +1,8 @@
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/ask2watch
-    username: ask2watch
-    password: ask2watch
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -18,14 +18,19 @@ server:
   port: 8080
 
 tmdb:
-  api-key: ${TMDB_API_KEY:2d6be03989ed15b3acafc07caa6b5260}
+  api-key: ${TMDB_API_KEY}
   base-url: https://api.themoviedb.org/3
   image-base-url: https://image.tmdb.org/t/p
 
 jwt:
-  secret: ${JWT_SECRET:ask2watch-dev-secret-key-minimum-32-characters-long}
+  secret: ${JWT_SECRET}
   expiration: 86400000
 
 anthropic:
-  api-key: ${ANTHROPIC_API_KEY:}
+  api-key: ${ANTHROPIC_API_KEY}
   model: claude-sonnet-4-6
+
+app:
+  default-admin-password: ${DEFAULT_ADMIN_PASSWORD:#{T(java.util.UUID).randomUUID().toString()}}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}

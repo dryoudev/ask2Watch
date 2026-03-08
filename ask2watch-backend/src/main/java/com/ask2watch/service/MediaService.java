@@ -5,6 +5,7 @@ import com.ask2watch.dto.media.AddWatchedRequest;
 import com.ask2watch.dto.media.MediaResponse;
 import com.ask2watch.dto.media.UpdateWatchedRequest;
 import com.ask2watch.dto.media.WatchedMediaResponse;
+import com.ask2watch.exception.ResourceNotFoundException;
 import com.ask2watch.model.Media;
 import com.ask2watch.model.MediaType;
 import com.ask2watch.model.User;
@@ -34,7 +35,7 @@ public class MediaService {
     public WatchedMediaResponse updateWatched(Long userId, Long watchedId, UpdateWatchedRequest request) {
         UserWatched watched = userWatchedRepository.findById(watchedId)
                 .filter(w -> w.getUser().getId().equals(userId))
-                .orElseThrow(() -> new RuntimeException("Watched entry not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Watched entry not found"));
 
         if (request.getUserRating() != null) {
             watched.setUserRating(request.getUserRating());
@@ -50,12 +51,12 @@ public class MediaService {
     public MediaResponse getMediaById(Long id) {
         return mediaRepository.findById(id)
                 .map(MediaMapper::toMediaResponse)
-                .orElseThrow(() -> new RuntimeException("Media not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Media not found"));
     }
 
     public WatchedMediaResponse addToWatched(Long userId, AddWatchedRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         // Find or create media by TMDB ID
         Media media = mediaRepository.findByTmdbId(Math.toIntExact(request.getTmdbId()))
@@ -79,7 +80,7 @@ public class MediaService {
     public void removeFromWatched(Long userId, Long watchedId) {
         UserWatched watched = userWatchedRepository.findById(watchedId)
                 .filter(w -> w.getUser().getId().equals(userId))
-                .orElseThrow(() -> new RuntimeException("Watched entry not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Watched entry not found"));
 
         userWatchedRepository.delete(watched);
     }

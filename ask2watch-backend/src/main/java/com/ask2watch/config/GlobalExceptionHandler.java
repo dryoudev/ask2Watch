@@ -1,5 +1,9 @@
 package com.ask2watch.config;
 
+import com.ask2watch.exception.AuthenticationException;
+import com.ask2watch.exception.DuplicateResourceException;
+import com.ask2watch.exception.ResourceNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -12,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -27,32 +32,44 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<Map<String, String>> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("error", "Invalid or missing request body");
-        return ResponseEntity.badRequest().body(error);
+        return ResponseEntity.badRequest().body(Map.of("error", "Invalid or missing request body"));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("error", ex.getMessage() != null ? ex.getMessage() : "Invalid argument");
-        return ResponseEntity.badRequest().body(error);
+        return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage() != null ? ex.getMessage() : "Invalid argument"));
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ResponseEntity<Map<String, String>> handleResourceNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ResponseEntity<Map<String, String>> handleAuthentication(AuthenticationException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid credentials"));
+    }
+
+    @ExceptionHandler(DuplicateResourceException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ResponseEntity<Map<String, String>> handleDuplicateResource(DuplicateResourceException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(RuntimeException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("error", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        log.error("Unexpected runtime error", ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "An internal error occurred"));
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("error", "An unexpected error occurred");
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        log.error("Unexpected error", ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "An unexpected error occurred"));
     }
 }

@@ -32,3 +32,6 @@ tmdb:
 app:
   csv-import:
     enabled: false
+  default-admin-password: test-admin-password
+  cors:
+    allowed-origins: http://localhost:4200
