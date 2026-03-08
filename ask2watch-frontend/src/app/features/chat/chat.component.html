@@ -1,0 +1,61 @@
+<app-header />
+
+<div class="min-h-screen bg-background pt-20 pb-24 px-4 max-w-3xl mx-auto">
+  <h1 class="font-display text-3xl text-gradient-red mb-6">Ask the Agent</h1>
+
+  <!-- Messages -->
+  <div class="space-y-4 mb-4">
+    @for (msg of messages(); track $index) {
+      <div [class]="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
+        <div [class]="msg.role === 'user'
+          ? 'bg-primary/20 border border-primary/30 rounded-2xl rounded-br-sm px-4 py-3 max-w-[80%]'
+          : 'glass-card rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%]'">
+          <p class="text-sm whitespace-pre-wrap">{{ msg.content }}</p>
+        </div>
+      </div>
+    }
+
+    @if (loading()) {
+      <div class="flex justify-start">
+        <div class="glass-card rounded-2xl px-4 py-3">
+          <div class="flex gap-1">
+            <span class="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></span>
+            <span class="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+            <span class="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+          </div>
+        </div>
+      </div>
+    }
+
+    <div #messagesEnd></div>
+  </div>
+
+  <!-- Suggested media -->
+  @if (suggestedMedia()) {
+    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mb-4">
+      @for (media of suggestedMedia(); track media.id) {
+        <div class="card-hover rounded-lg overflow-hidden">
+          <img [src]="posterUrl(media.posterPath)" [alt]="media.title"
+               class="w-full aspect-[2/3] object-cover" loading="lazy" />
+          <p class="text-xs p-1 truncate">{{ media.title }}</p>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- Input bar -->
+<div class="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-lg border-t border-border p-4 z-40">
+  <div class="max-w-3xl mx-auto flex gap-2">
+    <input [(ngModel)]="inputMessage"
+           (keydown.enter)="sendMessage()"
+           placeholder="What are you in the mood for?"
+           class="flex-1 bg-card border border-border rounded-xl px-4 py-3 text-sm
+                  focus:outline-none focus:ring-2 focus:ring-primary" />
+    <button (click)="sendMessage()" [disabled]="loading() || !inputMessage()"
+            class="bg-primary text-white rounded-xl px-6 py-3 text-sm font-semibold
+                   hover:bg-primary/90 disabled:opacity-50 cursor-pointer transition-colors">
+      Send
+    </button>
+  </div>
+</div>

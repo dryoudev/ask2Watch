@@ -1,0 +1,34 @@
+<app-header />
+
+<!-- Hero -->
+<div class="relative h-64 md:h-80 flex items-end">
+  <div class="container relative z-10 pb-8">
+    <h2 class="text-5xl md:text-7xl tracking-wide animate-slide-in">Your Movies</h2>
+    <p class="text-muted-foreground mt-2 text-lg animate-fade-in">
+      Track what you've seen. Discover what's next.
+    </p>
+  </div>
+</div>
+
+<!-- Content -->
+<div class="space-y-12 mt-4">
+  <!-- Watched Row -->
+  <app-movie-row title="Watched" icon="eye">
+    @for (item of watchedMovies(); track item.watchedId) {
+      <app-movie-card [watched]="item" [index]="$index" [compact]="true" (cardClick)="onWatchedClick($event)" />
+    }
+  </app-movie-row>
+
+  <!-- Picks Row -->
+  @if (picks().length > 0) {
+    <app-movie-row title="Picks of the Week" icon="sparkles">
+      @for (item of picks(); track item.pickId) {
+        <app-pick-card [pick]="item" [index]="$index" [compact]="true" (cardClick)="onPickClick($event)" />
+      }
+    </app-movie-row>
+  }
+</div>
+
+<div class="pb-16"></div>
+
+<app-media-detail-dialog [item]="selectedItem()" [open]="dialogOpen()" (openChange)="dialogOpen.set($event)" />
