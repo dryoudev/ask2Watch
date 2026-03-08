@@ -47,7 +47,8 @@
 <!-- Input bar -->
 <div class="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-lg border-t border-border p-4 z-40">
   <div class="max-w-3xl mx-auto flex gap-2">
-    <input [(ngModel)]="inputMessage"
+    <input [ngModel]="inputMessage()"
+           (ngModelChange)="inputMessage.set($event)"
            (keydown.enter)="sendMessage()"
            placeholder="What are you in the mood for?"
            class="flex-1 bg-card border border-border rounded-xl px-4 py-3 text-sm

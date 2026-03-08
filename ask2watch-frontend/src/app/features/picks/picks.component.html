@@ -9,13 +9,20 @@
       <h2 class="text-3xl tracking-wide">Picks of the Week</h2>
     </div>
 
-    <!-- Search -->
-    <div class="relative max-w-sm">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-      </svg>
-      <input type="text" [(ngModel)]="search" placeholder="Search picks..."
-             class="w-full bg-muted/30 border border-border/50 rounded-lg pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+    <!-- Search & Generate -->
+    <div class="flex items-center gap-3">
+      <div class="relative flex-1 max-w-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input type="text" [(ngModel)]="search" placeholder="Search picks..."
+               class="w-full bg-muted/30 border border-border/50 rounded-lg pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+      </div>
+      <button (click)="generateNewPicks()" [disabled]="generating()"
+              class="bg-primary text-white rounded-lg px-4 py-2.5 text-sm font-semibold
+                     hover:bg-primary/90 disabled:opacity-50 cursor-pointer transition-colors">
+        {{ generating() ? 'Generating...' : 'Generate Picks' }}
+      </button>
     </div>
 
     @if (filteredPicks().length === 0) {
@@ -27,9 +34,6 @@
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
         @for (item of filteredPicks(); track item.pickId) {
           <app-pick-card [pick]="item" [index]="$index" (cardClick)="onItemClick($event)" />
-        }
-        @if (filteredPicks().length === 0) {
-          <p class="col-span-full text-muted-foreground text-sm">No picks found.</p>
         }
       </div>
     }
