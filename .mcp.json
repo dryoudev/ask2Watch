@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ask2watch": {
+      "command": "node",
+      "args": ["/Users/dr.youd/Desktop/Atexo/ask2Watch/ask2watch-mcp-tmdb/index.js"],
+      "env": {
+        "TMDB_API_KEY": "2d6be03989ed15b3acafc07caa6b5260",
+        "BACKEND_URL": "http://localhost:8080"
+      }
+    }
+  }
+}
