@@ -1,0 +1,39 @@
+<app-header />
+
+<div class="min-h-screen pb-16">
+  <div class="container pt-24 space-y-6">
+    <div class="flex items-center gap-3">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gold">
+        <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+      </svg>
+      <h2 class="text-3xl tracking-wide">Picks of the Week</h2>
+    </div>
+
+    <!-- Search -->
+    <div class="relative max-w-sm">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+      </svg>
+      <input type="text" [(ngModel)]="search" placeholder="Search picks..."
+             class="w-full bg-muted/30 border border-border/50 rounded-lg pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+    </div>
+
+    @if (filteredPicks().length === 0) {
+      <div class="text-center py-20">
+        <p class="text-muted-foreground text-lg">No picks yet.</p>
+        <p class="text-muted-foreground text-sm mt-1">Use the chat to get recommendations.</p>
+      </div>
+    } @else {
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        @for (item of filteredPicks(); track item.pickId) {
+          <app-pick-card [pick]="item" [index]="$index" (cardClick)="onItemClick($event)" />
+        }
+        @if (filteredPicks().length === 0) {
+          <p class="col-span-full text-muted-foreground text-sm">No picks found.</p>
+        }
+      </div>
+    }
+  </div>
+</div>
+
+<app-media-detail-dialog [item]="selectedItem()" [open]="dialogOpen()" (openChange)="dialogOpen.set($event)" />
