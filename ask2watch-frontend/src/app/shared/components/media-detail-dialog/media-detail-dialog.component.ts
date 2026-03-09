@@ -19,6 +19,7 @@ export class MediaDetailDialogComponent {
   item = input<WatchedMediaResponse | PickResponse | null>(null);
   open = input(false);
   openChange = output<boolean>();
+  itemUpdated = output<WatchedMediaResponse>();
 
   showCommentInput = signal(false);
   commentText = signal('');
@@ -60,8 +61,12 @@ export class MediaDetailDialogComponent {
     this.mediaService.updateWatched(w.watchedId, {
       userRating: w.userRating ?? 0,
       comment: this.commentText(),
-    }).subscribe(() => {
-      this.showCommentInput.set(false);
+    }).subscribe({
+      next: (updated) => {
+        this.showCommentInput.set(false);
+        this.itemUpdated.emit(updated);
+      },
+      error: (err) => console.error('Failed to save comment:', err),
     });
   }
 }
