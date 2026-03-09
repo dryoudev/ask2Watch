@@ -26,6 +26,7 @@ public class PickService {
     private final MediaRepository mediaRepository;
     private final UserRepository userRepository;
     private final TmdbService tmdbService;
+    private final AuditLogService auditLogService;
 
     public List<PickResponse> getCurrentPicks(Long userId) {
         LocalDate startOfWeek = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
@@ -90,5 +91,6 @@ public class PickService {
                 .orElseThrow(() -> new ResourceNotFoundException("Pick not found"));
 
         pickOfWeekRepository.delete(pick);
+        auditLogService.logDataDeletion(userId, "PICK", pickId);
     }
 }
