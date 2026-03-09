@@ -25,6 +25,7 @@ public class MediaService {
     private final MediaRepository mediaRepository;
     private final UserWatchedRepository userWatchedRepository;
     private final UserRepository userRepository;
+    private final AuditLogService auditLogService;
 
     public List<WatchedMediaResponse> getWatchedByType(Long userId, MediaType type) {
         return userWatchedRepository.findByUserIdAndMedia_MediaType(userId, type).stream()
@@ -39,6 +40,7 @@ public class MediaService {
 
         if (request.getUserRating() != null) {
             watched.setUserRating(request.getUserRating());
+            auditLogService.logRatingChange(userId, watchedId, request.getUserRating());
         }
         if (request.getComment() != null) {
             watched.setComment(request.getComment());
@@ -83,5 +85,6 @@ public class MediaService {
                 .orElseThrow(() -> new ResourceNotFoundException("Watched entry not found"));
 
         userWatchedRepository.delete(watched);
+        auditLogService.logDataDeletion(userId, "WATCHED", watchedId);
     }
 }
