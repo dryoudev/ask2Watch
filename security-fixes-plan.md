@@ -326,10 +326,10 @@ Use Spring AOP or a simple `@EventListener` pattern.
 |-------|-------|--------------------|--------|
 | 1 | Secret management | SEC-01 to SEC-05, SEC-20 | DONE |
 | 2 | Error handling | SEC-07, SEC-08 | DONE |
-| 3 | Auth hardening | SEC-06, SEC-15, SEC-16 | PARTIAL (SEC-15 done, SEC-06/SEC-16 pending) |
+| 3 | Auth hardening | SEC-06, SEC-15, SEC-16 | PARTIAL (SEC-06/SEC-15 done, SEC-16 pending) |
 | 4 | Input validation | SEC-10 | DONE |
 | 5 | Transport security | SEC-09, SEC-11, SEC-12, SEC-17, SEC-18 | PARTIAL (SEC-11/SEC-18 done, SEC-09/SEC-12/SEC-17 pending) |
-| 6 | Operational | SEC-13, SEC-14, SEC-19 | PENDING |
+| 6 | Operational | SEC-13, SEC-14, SEC-19 | DONE (SEC-14/SEC-19 implemented, SEC-13 documented) |
 
 ---
 
@@ -337,15 +337,15 @@ Use Spring AOP or a simple `@EventListener` pattern.
 
 - [x] All secrets removed from source code (application.yml, CsvImportService, MCP index.js)
 - [x] GitHub Actions workflow created (`.github/workflows/ci.yml`) — injects secrets as env vars
-- [ ] GitHub Secrets configured in repo settings (manual — user action required)
+- [x] GitHub Secrets configured in repo settings (DB_USERNAME, DB_PASSWORD, TMDB_API_KEY, JWT_SECRET, DEFAULT_ADMIN_PASSWORD, CORS_ALLOWED_ORIGINS)
 - [x] `.env.example` files created and committed (backend + MCP)
 - [x] `.env` / `.env.local` added to `.gitignore` (backend + MCP)
 - [ ] Exposed secrets rotated (manual — user action required: TMDB key, JWT secret, DB password)
 - [x] Error responses return generic messages (GlobalExceptionHandler + AgentService)
-- [ ] Rate limiting active on auth endpoints (Phase 3 — pending: requires bucket4j)
+- [x] Rate limiting active on auth endpoints (bucket4j: 5 req/min login, 3 req/hr register)
 - [x] Security headers present in responses (X-Content-Type-Options, X-Frame-Options)
 - [x] Chat input validated and length-limited (@Valid + @Size(max=2000))
-- [ ] Audit logging operational (Phase 6 — pending)
+- [x] Audit logging operational (login, registration, deletion, rating changes)
 - [x] Custom exceptions replace RuntimeException (ResourceNotFoundException, AuthenticationException, DuplicateResourceException)
 - [x] Password policy strengthened (min 8 chars, uppercase + lowercase + digit)
 - [x] CORS origins configurable via environment variable
@@ -354,5 +354,5 @@ Use Spring AOP or a simple `@EventListener` pattern.
 - [ ] Refresh token mechanism (Phase 3 — pending)
 - [ ] HTTPS configuration (Phase 5 — pending: infrastructure decision)
 - [ ] TMDB API v4 migration (Phase 5 — pending)
-- [ ] Conversation history TTL eviction (Phase 6 — pending)
-- [ ] Audit logging (Phase 6 — pending)
+- [x] Conversation history TTL eviction (Caffeine cache: 1h expiry, max 1000 entries)
+- [x] Audit logging (AuditLogService: login, registration, deletion, rating changes)
