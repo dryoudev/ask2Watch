@@ -81,4 +81,4 @@
   </div>
 </div>
 
-<app-media-detail-dialog [item]="selectedItem()" [open]="dialogOpen()" (openChange)="dialogOpen.set($event)" />
+<app-media-detail-dialog [item]="selectedItem()" [open]="dialogOpen()" (openChange)="dialogOpen.set($event)" (itemUpdated)="onItemUpdated($event)" />

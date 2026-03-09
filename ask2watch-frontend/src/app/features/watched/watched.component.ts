@@ -87,6 +87,16 @@ export class WatchedComponent implements OnInit {
     this.dialogOpen.set(true);
   }
 
+  onItemUpdated(updated: WatchedMediaResponse): void {
+    this.movies.update((items) =>
+      items.map((item) => (item.watchedId === updated.watchedId ? updated : item))
+    );
+    this.series.update((items) =>
+      items.map((item) => (item.watchedId === updated.watchedId ? updated : item))
+    );
+    this.selectedItem.set(updated);
+  }
+
   onRatingChanged(event: { watchedId: number; newRating: number }): void {
     // Update the rating in both movies and series arrays
     this.movies.update((items) =>
