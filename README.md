@@ -124,6 +124,41 @@ cp .env.example .env
 
 Le serveur MCP est utilise par Claude Code pour interagir avec l'application depuis le terminal.
 
+### Tools MCP disponibles
+
+Le serveur `ask2watch-mcp-tmdb` expose actuellement les tools suivants.
+
+#### Consultation backend
+
+- `get_watched_movies` : recuperer les films vus avec notes et commentaires
+- `get_watched_series` : recuperer les series vues avec notes et commentaires
+- `get_current_picks` : recuperer les picks de la semaine en cours
+
+#### Recherche et exploration TMDB
+
+- `search_movie` : chercher un film par titre
+- `search_tv` : chercher une serie par titre
+- `get_trending` : recuperer les tendances TMDB (jour ou semaine)
+- `get_recommendations` : recuperer des recommandations a partir d'un TMDB ID
+- `get_movie_details` : recuperer les details complets d'un film ou d'une serie via TMDB
+- `discover` : decouvrir des films ou series par genres, annees et note minimale
+
+#### Watchlist CRUD
+
+- `search_watched` : chercher un titre dans la watchlist du Maître
+- `add_to_watched` : ajouter un film ou une serie a la liste des vus
+- `remove_from_watched` : retirer un titre de la liste des vus
+- `rate_watched` : ajouter ou modifier une note
+- `comment_watched` : ajouter ou modifier un commentaire
+- `update_watched` : mettre a jour note, commentaire et/ou date de visionnage
+
+#### Picks CRUD
+
+- `add_pick` : ajouter un pick de la semaine
+- `remove_pick` : supprimer un pick courant
+- `list_picks_history` : consulter l'historique des picks
+- `generate_picks` : produire une synthese de picks intelligents basee sur les gouts du Maître et les tendances
+
 ## Variables d'environnement
 
 ### Backend (.env)
