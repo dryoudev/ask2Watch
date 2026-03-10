@@ -60,6 +60,23 @@ public class AgentService {
             - Tu peux ajouter des picks, ajouter/retirer des films vus, noter et commenter des films directement.
             """;
 
+    private static final String GENERATE_PICKS_PROMPT = """
+            Génère maintenant des picks de la semaine pour le Maître.
+
+            Contraintes obligatoires :
+            - Utilise d'abord get_watched_movies et get_watched_series pour analyser ses goûts à partir de ses notes et commentaires.
+            - Utilise ensuite get_current_picks pour vérifier les picks déjà présents cette semaine.
+            - Cherche uniquement via les tools TMDB disponibles.
+            - Ne propose ni n'ajoute jamais un titre déjà vu ou déjà présent dans les picks actuels.
+            - Base-toi prioritairement sur les genres bien notés, les commentaires positifs et les titres proches de ses préférences.
+            - Ajoute directement entre 3 et 5 picks au total pour cette semaine avec add_pick.
+            - Si des picks existent déjà, complète seulement jusqu'à un maximum de 5 picks.
+            - Chaque raison doit être courte, personnalisée et fondée sur les goûts observés du Maître.
+            - Tu peux choisir films et séries, mais reste cohérent avec ses préférences.
+
+            Quand tu as fini, résume brièvement les picks ajoutés pour le Maître.
+            """;
+
     private final WebClient anthropicClient;
     private final WebClient tmdbClient;
     private final MediaService mediaService;
@@ -113,6 +130,16 @@ public class AgentService {
 
     public void clearHistory(Long userId) {
         conversationHistory.invalidate(userId);
+    }
+
+    public List<PickResponse> generatePicks(Long userId) {
+        List<ChatMessage> messages = new ArrayList<>();
+        messages.add(new ChatMessage("user", GENERATE_PICKS_PROMPT));
+
+        String responseText = callClaude(userId, buildSystemPrompt(), messages);
+        log.info("Generate picks response for user {}: {}", userId, responseText);
+
+        return pickService.getCurrentPicks(userId);
     }
 
     private String buildSystemPrompt() {
@@ -250,7 +277,7 @@ public class AgentService {
                 .title(input.path("title").asText())
                 .reason(input.path("reason").asText())
                 .build();
-        PickResponse response = pickService.addPick(userId, request);
+        PickResponse response = pickService.addPick(userId, request, true);
         return "Pick ajouté: " + response.getMedia().getTitle() + " (pick_id=" + response.getPickId() + ")";
     }
 
@@ -462,14 +489,14 @@ public class AgentService {
         // CRUD tools
         tools.add(buildTool("add_pick", "Ajouter un film/série dans les Picks de la semaine du Maître",
                 Map.of("tmdb_id", prop("integer", "TMDB ID du film ou série"),
-                        "media_type", enumProp("string", List.of("MOVIE", "TV_SERIES"), "Type"),
+                        "media_type", enumProp("string", List.of("MOVIE", "SERIES"), "Type"),
                         "title", prop("string", "Titre du film ou série"),
                         "reason", prop("string", "Raison du pick")),
                 List.of("tmdb_id", "media_type", "title", "reason")));
 
         tools.add(buildTool("add_to_watched", "Ajouter un film/série à la liste des vus du Maître",
                 Map.of("tmdb_id", prop("integer", "TMDB ID du film ou série"),
-                        "media_type", enumProp("string", List.of("MOVIE", "TV_SERIES"), "Type"),
+                        "media_type", enumProp("string", List.of("MOVIE", "SERIES"), "Type"),
                         "title", prop("string", "Titre du film ou série")),
                 List.of("tmdb_id", "media_type", "title")));
 

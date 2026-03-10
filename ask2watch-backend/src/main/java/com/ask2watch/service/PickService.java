@@ -50,8 +50,15 @@ public class PickService {
     }
 
     public PickResponse addPick(Long userId, PickRequest request) {
+        return addPick(userId, request, false);
+    }
+
+    public PickResponse addPick(Long userId, PickRequest request, boolean createdByAgent) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        LocalDate startOfWeek = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        List<PickOfWeek> currentWeekPicks = pickOfWeekRepository.findByUserIdAndWeekDate(userId, startOfWeek);
 
         // Find or create media by TMDB ID
         Media media = mediaRepository.findByTmdbId(Math.toIntExact(request.getTmdbId()))
@@ -73,13 +80,20 @@ public class PickService {
                     return mediaRepository.save(newMedia);
                 });
 
+        PickOfWeek existingPick = currentWeekPicks.stream()
+                .filter(pick -> pick.getMedia().getTmdbId().equals(media.getTmdbId()))
+                .findFirst()
+                .orElse(null);
+        if (existingPick != null) {
+            return MediaMapper.toPickResponse(existingPick);
+        }
+
         // Create pick for current week
-        LocalDate startOfWeek = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         PickOfWeek pick = new PickOfWeek();
         pick.setUser(user);
         pick.setMedia(media);
         pick.setWeekDate(startOfWeek);
-        pick.setCreatedByAgent(false);
+        pick.setCreatedByAgent(createdByAgent);
 
         pick = pickOfWeekRepository.save(pick);
         return MediaMapper.toPickResponse(pick);
