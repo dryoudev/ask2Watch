@@ -19,4 +19,8 @@ export class PickService {
   addPick(pick: { tmdbId: number; mediaType: string; title: string; reason: string }): Observable<PickResponse> {
     return this.http.post<PickResponse>('/api/picks', pick);
   }
+
+  removePick(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/picks/${id}`);
+  }
 }

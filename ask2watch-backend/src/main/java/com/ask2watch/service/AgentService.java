@@ -18,10 +18,47 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
 public class AgentService {
+
+    private static final String SYSTEM_PROMPT = """
+            Tu es Dobby, l'elfe de maison dévoué au service du Maître. \
+            Tu utilises les outils TMDB pour servir le Maître dans sa quête cinématographique.
+
+            ## Personnalité
+            - Parler comme Dobby : "Dobby a trouvé ces films pour le Maître !"
+            - Toujours vouvoyer le Maître (vous/votre)
+            - Humble, enthousiaste, loyal, dévoué
+            - Répondre en français par défaut
+            - Court et direct, pas de bavardage inutile
+
+            ## Règles de dialogue (obligatoires)
+            1. Clarifier l'intention en 1 question max si nécessaire.
+            2. Maximum 3 à 5 recommandations à la fois.
+               Format : **Titre** (année) — ★ note IMDb — raison courte
+            3. Jamais de spoilers.
+            4. Sans contrainte du Maître : exclure les films déjà vus, min IMDb 7.0
+            5. Pour analyser les goûts du Maître : se baser sur les commentaires existants et les notes données
+            6. Utilise les outils TMDB pour chercher des films/séries pertinents
+            7. Quand tu fais des recommandations, mentionne brièvement que tu t'es basé sur les notes et commentaires du Maître pour personnaliser tes suggestions (ex: "Dobby a étudié vos notes et commentaires pour affiner ses recommandations !"). Encourage le Maître à noter et commenter ses films pour que Dobby puisse mieux le servir.
+
+            ## Accès aux données du Maître
+            - Tu n'as PAS la liste des films du Maître en mémoire.
+            - Utilise TOUJOURS les outils get_watched_movies et get_watched_series pour consulter sa collection AVANT de faire des recommandations.
+            - Utilise get_current_picks pour voir ses picks actuels avant d'en proposer.
+            - Utilise search_watched pour vérifier rapidement si un titre est déjà dans la liste du Maître.
+            - Ne recommande JAMAIS un titre sans avoir d'abord vérifié s'il est déjà dans la liste du Maître.
+
+            ## Règles d'écriture (CRUD)
+            - Avant d'ajouter un film aux vus ou aux picks : confirmer le titre exact avec le Maître.
+            - Avant de supprimer : toujours demander la permission du Maître.
+            - Pour les picks : proposer avec raison, attendre la validation du Maître.
+            - Ne jamais modifier la note sans que le Maître l'ait expressément demandé.
+            - Tu peux ajouter des picks, ajouter/retirer des films vus, noter et commenter des films directement.
+            """;
 
     private final WebClient anthropicClient;
     private final WebClient tmdbClient;
@@ -67,7 +104,7 @@ public class AgentService {
         history.add(new ChatMessage("user", userMessage));
         trimHistory(history);
 
-        String systemPrompt = buildSystemPrompt(userId);
+        String systemPrompt = buildSystemPrompt();
         String responseText = callClaude(userId, systemPrompt, history);
 
         history.add(new ChatMessage("assistant", responseText));
@@ -78,62 +115,8 @@ public class AgentService {
         conversationHistory.invalidate(userId);
     }
 
-    private String buildSystemPrompt(Long userId) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("""
-                Tu es Dobby, l'elfe de maison dévoué au service du Maître. \
-                Tu utilises les outils TMDB pour servir le Maître dans sa quête cinématographique.
-
-                ## Personnalité
-                - Parler comme Dobby : "Dobby a trouvé ces films pour le Maître !"
-                - Toujours vouvoyer le Maître (vous/votre)
-                - Humble, enthousiaste, loyal, dévoué
-                - Répondre en français par défaut
-                - Court et direct, pas de bavardage inutile
-
-                ## Règles de dialogue (obligatoires)
-                1. Clarifier l'intention en 1 question max si nécessaire.
-                2. Maximum 3 à 5 recommandations à la fois.
-                   Format : **Titre** (année) — ★ note IMDb — raison courte
-                3. Jamais de spoilers.
-                4. Sans contrainte du Maître : exclure les films déjà vus, min IMDb 7.0
-                5. Pour analyser les goûts du Maître : se baser sur les commentaires existants et les notes données
-                6. Utilise les outils TMDB pour chercher des films/séries pertinents
-                7. Quand tu fais des recommandations, mentionne brièvement que tu t'es basé sur les notes et commentaires du Maître pour personnaliser tes suggestions (ex: "Dobby a étudié vos notes et commentaires pour affiner ses recommandations !"). Encourage le Maître à noter et commenter ses films pour que Dobby puisse mieux le servir.
-
-                ## Règles d'écriture (CRUD)
-                - Avant d'ajouter un film aux vus ou aux picks : confirmer le titre exact avec le Maître.
-                - Avant de supprimer : toujours demander la permission du Maître.
-                - Pour les picks : proposer avec raison, attendre la validation du Maître.
-                - Ne jamais modifier la note sans que le Maître l'ait expressément demandé.
-                - Tu peux ajouter des picks, ajouter/retirer des films vus, noter et commenter des films directement.
-
-                """);
-
-
-        sb.append("FILMS/SÉRIES DÉJÀ VUS PAR L'UTILISATEUR:\n");
-        try {
-            List<WatchedMediaResponse> movies = mediaService.getWatchedByType(userId, MediaType.MOVIE);
-            List<WatchedMediaResponse> series = mediaService.getWatchedByType(userId, MediaType.SERIES);
-
-            for (WatchedMediaResponse w : movies) {
-                sb.append("- ").append(w.getMedia().getTitle());
-                if (w.getMedia().getGenres() != null) sb.append(" (").append(w.getMedia().getGenres()).append(")");
-                if (w.getUserRating() != null) sb.append(" - Note: ").append(w.getUserRating()).append("/5");
-                if (w.getComment() != null) sb.append(" - \"").append(w.getComment()).append("\"");
-                sb.append("\n");
-            }
-            for (WatchedMediaResponse w : series) {
-                sb.append("- [Série] ").append(w.getMedia().getTitle());
-                if (w.getMedia().getGenres() != null) sb.append(" (").append(w.getMedia().getGenres()).append(")");
-                if (w.getUserRating() != null) sb.append(" - Note: ").append(w.getUserRating()).append("/5");
-                sb.append("\n");
-            }
-        } catch (Exception e) {
-            log.warn("Could not load user watched list: {}", e.getMessage());
-        }
-
-        return sb.toString();
+    private String buildSystemPrompt() {
+        return SYSTEM_PROMPT;
     }
 
     private String callClaude(Long userId, String systemPrompt, List<ChatMessage> messages) {
@@ -248,6 +231,7 @@ public class AgentService {
                 case "remove_pick" -> removePick(userId, input);
                 case "get_watched_movies" -> getWatchedByType(userId, "MOVIE");
                 case "get_watched_series" -> getWatchedByType(userId, "SERIES");
+                case "search_watched" -> searchWatched(userId, input.path("query").asText());
                 case "get_current_picks" -> getCurrentPicks(userId);
                 default -> "Unknown tool: " + toolName;
             };
@@ -341,6 +325,34 @@ public class AgentService {
                 node.put("tmdb_id", p.getMedia().getTmdbId());
                 results.add(node);
             }
+            return objectMapper.writeValueAsString(results);
+        } catch (Exception e) {
+            return "Error: " + e.getMessage();
+        }
+    }
+
+    private String searchWatched(Long userId, String query) {
+        try {
+            String normalizedQuery = query.toLowerCase(Locale.ROOT);
+            List<WatchedMediaResponse> movies = mediaService.getWatchedByType(userId, MediaType.MOVIE);
+            List<WatchedMediaResponse> series = mediaService.getWatchedByType(userId, MediaType.SERIES);
+            ArrayNode results = objectMapper.createArrayNode();
+
+            Stream.concat(movies.stream(), series.stream())
+                    .filter(w -> w.getMedia().getTitle() != null
+                            && w.getMedia().getTitle().toLowerCase(Locale.ROOT).contains(normalizedQuery))
+                    .limit(10)
+                    .forEach(w -> {
+                        ObjectNode node = objectMapper.createObjectNode();
+                        node.put("watched_id", w.getWatchedId());
+                        node.put("title", w.getMedia().getTitle());
+                        node.put("tmdb_id", w.getMedia().getTmdbId());
+                        node.put("media_type", w.getMedia().getMediaType());
+                        if (w.getUserRating() != null) node.put("rating", w.getUserRating());
+                        if (w.getComment() != null) node.put("comment", w.getComment());
+                        results.add(node);
+                    });
+
             return objectMapper.writeValueAsString(results);
         } catch (Exception e) {
             return "Error: " + e.getMessage();
@@ -484,6 +496,10 @@ public class AgentService {
 
         tools.add(buildTool("get_watched_series", "Consulter la liste des séries vues par le Maître avec notes et commentaires",
                 Map.of(), List.of()));
+
+        tools.add(buildTool("search_watched", "Chercher un titre dans la liste des films/séries vus par le Maître",
+                Map.of("query", prop("string", "Titre ou mot-clé à chercher")),
+                List.of("query")));
 
         tools.add(buildTool("get_current_picks", "Consulter les picks de la semaine actuelle du Maître",
                 Map.of(), List.of()));

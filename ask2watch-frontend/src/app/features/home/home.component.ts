@@ -4,7 +4,6 @@ import { AppHeaderComponent } from '../../shared/components/app-header/app-heade
 import { MovieRowComponent } from '../../shared/components/movie-row/movie-row.component';
 import { MovieCardComponent } from '../../shared/components/movie-card/movie-card.component';
 import { MediaCardComponent } from '../../shared/components/media-card/media-card.component';
-import { PickCardComponent } from '../../shared/components/pick-card/pick-card.component';
 import { MediaDetailDialogComponent } from '../../shared/components/media-detail-dialog/media-detail-dialog.component';
 import { MediaService } from '../../core/services/media.service';
 import { PickService } from '../../core/services/pick.service';
@@ -19,7 +18,7 @@ import { RecommendationDto } from '../../shared/models/recommendation.model';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [FormsModule, AppHeaderComponent, MovieRowComponent, MovieCardComponent, MediaCardComponent, PickCardComponent, MediaDetailDialogComponent],
+  imports: [FormsModule, AppHeaderComponent, MovieRowComponent, MovieCardComponent, MediaCardComponent, MediaDetailDialogComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
 })

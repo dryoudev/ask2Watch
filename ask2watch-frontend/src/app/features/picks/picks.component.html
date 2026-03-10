@@ -33,7 +33,12 @@
     } @else {
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
         @for (item of filteredPicks(); track item.pickId) {
-          <app-pick-card [pick]="item" [index]="$index" (cardClick)="onItemClick($event)" />
+          <app-pick-card
+            [pick]="item"
+            [index]="$index"
+            (cardClick)="onItemClick($event)"
+            (addToWatched)="onAddToWatched($event)"
+            (removeFromPicks)="onRemovePick($event)" />
         }
       </div>
     }
@@ -41,3 +46,72 @@
 </div>
 
 <app-media-detail-dialog [item]="selectedItem()" [open]="dialogOpen()" (openChange)="dialogOpen.set($event)" />
+
+@if (addToWatchedDialogOpen()) {
+  @if (selectedPickForWatched(); as pick) {
+    <div class="fixed inset-0 z-50 bg-black/70" (click)="closeAddToWatchedDialog()"></div>
+
+    <div class="fixed top-1/2 left-1/2 z-51 w-[92%] max-w-md -translate-x-1/2 -translate-y-1/2 glass-card p-6">
+      <button
+        type="button"
+        class="absolute right-4 top-4 text-muted-foreground hover:text-foreground cursor-pointer"
+        (click)="closeAddToWatchedDialog()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+        </svg>
+      </button>
+
+      <div class="space-y-5">
+        <div>
+          <p class="text-xs uppercase tracking-[0.2em] text-muted-foreground">Ajouter aux vus</p>
+          <h3 class="mt-1 text-xl font-semibold">{{ pick.media.title }}</h3>
+          <p class="mt-1 text-sm text-muted-foreground">
+            Ajoutez une note et un commentaire avant de déplacer ce pick dans votre liste des vus.
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm text-muted-foreground">Votre note</label>
+          <div class="flex items-center gap-3">
+            <app-star-rating
+              [rating]="watchedRating()"
+              [max]="5"
+              [size]="22"
+              [editable]="true"
+              (ratingChanged)="watchedRating.set($event)" />
+            <span class="text-sm text-muted-foreground">
+              {{ watchedRating() > 0 ? watchedRating() + '/5' : 'Optionnel' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label for="watched-comment" class="text-sm text-muted-foreground">Votre commentaire</label>
+          <textarea
+            id="watched-comment"
+            rows="4"
+            [(ngModel)]="watchedComment"
+            placeholder="Votre avis sur ce film ou cette série..."
+            class="w-full resize-none rounded-lg border border-border bg-muted/40 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <button
+            type="button"
+            class="rounded-lg px-4 py-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer"
+            [disabled]="savingWatched()"
+            (click)="closeAddToWatchedDialog()">
+            Annuler
+          </button>
+          <button
+            type="button"
+            class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="savingWatched()"
+            (click)="confirmAddToWatched()">
+            {{ savingWatched() ? 'Enregistrement...' : 'Ajouter aux vus' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+}

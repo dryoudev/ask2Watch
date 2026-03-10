@@ -13,6 +13,8 @@ export class PickCardComponent {
   index = input(0);
   compact = input(false);
   cardClick = output<PickResponse>();
+  addToWatched = output<PickResponse>();
+  removeFromPicks = output<PickResponse>();
 
   get poster(): string {
     return posterUrl(this.pick().media.posterPath);
@@ -20,5 +22,15 @@ export class PickCardComponent {
 
   get delay(): string {
     return `${this.index() * 80}ms`;
+  }
+
+  onAddToWatched(event: MouseEvent): void {
+    event.stopPropagation();
+    this.addToWatched.emit(this.pick());
+  }
+
+  onRemoveFromPicks(event: MouseEvent): void {
+    event.stopPropagation();
+    this.removeFromPicks.emit(this.pick());
   }
 }

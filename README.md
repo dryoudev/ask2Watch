@@ -29,9 +29,11 @@ Application web de suivi de films et series, recommandations personnalisees et a
 
 ### Chat avec Dobby (Assistant IA)
 - Conversation en langage naturel depuis la page `/chat` ou le widget sur la home
-- Dobby analyse les notes, commentaires et genres preferes du Maitre
+- System prompt statique et leger: la watchlist n'est plus injectee dans chaque requete
+- Dobby consulte la watchlist et les picks a la demande via les tools `get_watched_movies`, `get_watched_series`, `get_current_picks`
+- Tool `search_watched` pour verifier rapidement si un titre existe deja avant une recommandation
 - Recherche TMDB en temps reel via 5 outils (search, trending, discover, recommendations)
-- 9 outils CRUD : ajouter/supprimer des picks, ajouter/supprimer des films vus, noter, commenter
+- 10 outils : recherche TMDB, consultation de la watchlist, verification ciblee, picks et actions CRUD
 - Historique de conversation avec TTL (1h)
 
 ### Recommandations
@@ -174,6 +176,19 @@ Le serveur MCP est utilise par Claude Code pour interagir avec l'application dep
 |---------|----------|------------|
 | POST | `/api/agent/chat` | Envoyer un message a Dobby |
 | DELETE | `/api/agent/history` | Effacer l'historique |
+
+## Fonctionnement du prompt agent
+
+Avant, le backend injectait toute la liste des films et series vus dans le `system prompt` a chaque message. Avec une watchlist volumineuse, cela augmentait fortement le cout en tokens.
+
+Maintenant, le prompt reste statique et court. Dobby charge les donnees du Maitre uniquement quand il en a besoin pendant la conversation :
+
+- `get_watched_movies` pour la liste des films vus
+- `get_watched_series` pour la liste des series vues
+- `search_watched` pour verifier rapidement un titre
+- `get_current_picks` pour controler les picks deja actifs
+
+Les resultats de tools restent dans l'historique de conversation en memoire pendant 1 heure, ce qui evite de recharger les memes donnees a chaque message de la meme session.
 
 ## Tests
 

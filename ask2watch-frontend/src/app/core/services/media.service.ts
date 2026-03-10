@@ -19,6 +19,10 @@ export class MediaService {
     return this.http.get<WatchedMediaResponse[]>('/api/media/watched?type=SERIES');
   }
 
+  addToWatched(request: { tmdbId: number; mediaType: MediaType; title: string }): Observable<WatchedMediaResponse> {
+    return this.http.post<WatchedMediaResponse>('/api/media/watched', request);
+  }
+
   updateWatched(id: number, request: UpdateWatchedRequest): Observable<WatchedMediaResponse> {
     return this.http.put<WatchedMediaResponse>(`/api/media/watched/${id}`, request);
   }
