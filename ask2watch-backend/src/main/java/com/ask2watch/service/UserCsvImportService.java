@@ -35,6 +35,14 @@ public class UserCsvImportService {
     private final UserWatchedRepository userWatchedRepository;
 
     public CsvImportResponse importCsv(Long userId, MultipartFile file, MediaType selectedType) {
+        return doImport(userId, file, selectedType);
+    }
+
+    public CsvImportResponse importCsvAuto(Long userId, MultipartFile file) {
+        return doImport(userId, file, null);
+    }
+
+    private CsvImportResponse doImport(Long userId, MultipartFile file, MediaType selectedType) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("CSV file is required");
         }
@@ -63,7 +71,7 @@ public class UserCsvImportService {
                 continue;
             }
 
-            if (rowType != selectedType) {
+            if (selectedType != null && rowType != selectedType) {
                 skipped++;
                 continue;
             }

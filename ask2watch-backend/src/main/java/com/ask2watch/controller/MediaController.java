@@ -73,6 +73,14 @@ public class MediaController {
         return ResponseEntity.ok(mediaService.importCsv(userId, file, mediaType));
     }
 
+    @PostMapping(value = "/import/csv/auto", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<CsvImportResponse> importCsvAuto(
+            @RequestPart("file") MultipartFile file,
+            Authentication auth) {
+        Long userId = (Long) auth.getPrincipal();
+        return ResponseEntity.ok(mediaService.importCsvAuto(userId, file));
+    }
+
     @GetMapping("/trending")
     public ResponseEntity<List<MediaResponse>> getTrending(
             @RequestParam(defaultValue = "10") int limit) {

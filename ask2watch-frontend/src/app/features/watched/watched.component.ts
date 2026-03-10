@@ -7,7 +7,7 @@ import { MediaDetailDialogComponent } from '../../shared/components/media-detail
 import { MediaService } from '../../core/services/media.service';
 import { WatchedMediaResponse } from '../../shared/models/watched.model';
 import { CsvImportError, CsvImportSummary } from '../../shared/models/csv-import.model';
-import { MediaType } from '../../shared/models/media.model';
+
 
 @Component({
   selector: 'app-watched',
@@ -26,7 +26,6 @@ export class WatchedComponent implements OnInit {
   series = signal<WatchedMediaResponse[]>([]);
   selectedItem = signal<WatchedMediaResponse | null>(null);
   dialogOpen = signal(false);
-  uploadType = signal<MediaType>('MOVIE');
   uploadFile = signal<File | null>(null);
   uploadStatus = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
   uploadMessage = signal('');
@@ -114,36 +113,26 @@ export class WatchedComponent implements OnInit {
     );
   }
 
-  onFileSelected(event: Event): void {
+  onFileSelectedAndUpload(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
+    input.value = '';
+    if (!file) return;
+
     this.uploadFile.set(file);
-    this.uploadStatus.set('idle');
-    this.uploadMessage.set(file ? `${file.name} selected` : '');
-    this.uploadSummary.set(null);
-    this.uploadErrors.set([]);
-  }
-
-  triggerUpload(): void {
-    const file = this.uploadFile();
-    if (!file) {
-      this.uploadStatus.set('error');
-      this.uploadMessage.set('Select a CSV file before importing.');
-      return;
-    }
-
     this.uploadStatus.set('loading');
-    this.uploadMessage.set('Import in progress...');
+    this.uploadMessage.set('Import en cours...');
     this.uploadSummary.set(null);
     this.uploadErrors.set([]);
 
-    this.mediaService.importCsv(file, this.uploadType()).subscribe({
+    this.mediaService.importCsvAuto(file).subscribe({
       next: (response) => {
         this.uploadStatus.set('success');
         this.uploadMessage.set(response.message);
         this.uploadSummary.set(response.summary);
         this.uploadErrors.set(response.errors);
-        this.refreshWatchedList(this.uploadType());
+        this.loadMovies();
+        this.loadSeries();
       },
       error: (error: HttpErrorResponse) => {
         this.uploadStatus.set('error');
@@ -166,14 +155,6 @@ export class WatchedComponent implements OnInit {
       next: (data) => this.series.set(data),
       error: () => this.series.set([]),
     });
-  }
-
-  private refreshWatchedList(type: MediaType): void {
-    if (type === 'MOVIE') {
-      this.loadMovies();
-      return;
-    }
-    this.loadSeries();
   }
 
   private extractErrorMessage(error: HttpErrorResponse): string {

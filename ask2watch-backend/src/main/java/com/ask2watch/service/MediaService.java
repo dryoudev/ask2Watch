@@ -91,6 +91,10 @@ public class MediaService {
         return userCsvImportService.importCsv(userId, file, mediaType);
     }
 
+    public CsvImportResponse importCsvAuto(Long userId, MultipartFile file) {
+        return userCsvImportService.importCsvAuto(userId, file);
+    }
+
     public void removeFromWatched(Long userId, Long watchedId) {
         UserWatched watched = userWatchedRepository.findById(watchedId)
                 .filter(w -> w.getUser().getId().equals(userId))

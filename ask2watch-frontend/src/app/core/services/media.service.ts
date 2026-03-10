@@ -42,4 +42,10 @@ export class MediaService {
 
     return this.http.post<CsvImportResponse>('/api/media/import/csv', data);
   }
+
+  importCsvAuto(file: File): Observable<CsvImportResponse> {
+    const data = new FormData();
+    data.append('file', file);
+    return this.http.post<CsvImportResponse>('/api/media/import/csv/auto', data);
+  }
 }
