@@ -9,8 +9,8 @@ import lombok.Data;
 @Builder
 public class UpdateWatchedRequest {
 
-    @Min(1)
-    @Max(5)
+    @Min(0)
+    @Max(10)
     private Integer userRating;
 
     private String comment;

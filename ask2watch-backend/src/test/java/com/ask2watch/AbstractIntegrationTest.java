@@ -89,7 +89,7 @@ public abstract class AbstractIntegrationTest {
                 // Table might not exist yet
             }
             try {
-                jdbcTemplate.execute("TRUNCATE TABLE pick_of_week CASCADE");
+                jdbcTemplate.execute("TRUNCATE TABLE picks_of_week CASCADE");
             } catch (Exception e) {
                 // Table might not exist yet
             }

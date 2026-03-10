@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -54,6 +54,108 @@ public class TmdbService {
                 .retrieve()
                 .bodyToMono(TmdbTvDetails.class)
                 .block();
+    }
+
+    public List<Media> getTrendingMovies(int limit) {
+        try {
+            TmdbDiscoverResponse response = tmdbWebClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/trending/movie/week")
+                            .queryParam("api_key", tmdbConfig.getApiKey())
+                            .build())
+                    .retrieve()
+                    .bodyToMono(TmdbDiscoverResponse.class)
+                    .block();
+
+            if (response == null || response.getResults() == null) {
+                return List.of();
+            }
+
+            return response.getResults().stream()
+                    .limit(limit)
+                    .map(this::convertTmdbMovieToMedia)
+                    .toList();
+        } catch (Exception e) {
+            log.warn("Failed to get trending movies: {}", e.getMessage());
+            return List.of();
+        }
+    }
+
+    public List<Media> discoverMoviesByGenres(List<String> genres, int limit) {
+        try {
+            // Convert genre names to TMDB genre IDs
+            Map<String, Integer> genreIdMap = getTmdbGenreIdMap();
+            List<Integer> genreIds = genres.stream()
+                    .map(genreIdMap::get)
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            if (genreIds.isEmpty()) {
+                return List.of();
+            }
+
+            String genreParam = genreIds.stream()
+                    .map(String::valueOf)
+                    .collect(Collectors.joining("|"));
+
+            TmdbDiscoverResponse response = tmdbWebClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/discover/movie")
+                            .queryParam("with_genres", genreParam)
+                            .queryParam("sort_by", "popularity.desc")
+                            .queryParam("page", 1)
+                            .queryParam("api_key", tmdbConfig.getApiKey())
+                            .build())
+                    .retrieve()
+                    .bodyToMono(TmdbDiscoverResponse.class)
+                    .block();
+
+            if (response == null || response.getResults() == null) {
+                return List.of();
+            }
+
+            return response.getResults().stream()
+                    .limit(limit)
+                    .map(this::convertTmdbMovieToMedia)
+                    .toList();
+        } catch (Exception e) {
+            log.warn("Failed to discover movies by genres {}: {}", genres, e.getMessage());
+            return List.of();
+        }
+    }
+
+    private Media convertTmdbMovieToMedia(TmdbMovieResult result) {
+        Media media = new Media();
+        media.setTmdbId(result.getId());
+        media.setTitle(result.getTitle());
+        media.setMediaType(MediaType.MOVIE);
+        media.setPosterPath(result.getPosterPath());
+        media.setSynopsis(result.getOverview());
+        if (result.getVoteAverage() > 0) {
+            media.setImdbRating(new java.math.BigDecimal(result.getVoteAverage()));
+        }
+        return media;
+    }
+
+    private Map<String, Integer> getTmdbGenreIdMap() {
+        return Map.ofEntries(
+                Map.entry("Action", 28),
+                Map.entry("Adventure", 12),
+                Map.entry("Animation", 16),
+                Map.entry("Comedy", 35),
+                Map.entry("Crime", 80),
+                Map.entry("Documentary", 99),
+                Map.entry("Drama", 18),
+                Map.entry("Fantasy", 14),
+                Map.entry("Horror", 27),
+                Map.entry("Music", 10402),
+                Map.entry("Mystery", 9648),
+                Map.entry("Romance", 10749),
+                Map.entry("Science Fiction", 878),
+                Map.entry("Thriller", 53),
+                Map.entry("War", 10752),
+                Map.entry("Western", 37)
+        );
     }
 
     public void enrichMedia(Media media) {

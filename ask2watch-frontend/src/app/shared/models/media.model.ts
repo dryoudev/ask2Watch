@@ -1,9 +1,11 @@
+export type MediaType = 'MOVIE' | 'SERIES';
+
 export interface MediaResponse {
   id: number;
   imdbId: string;
   tmdbId: number;
   title: string;
-  mediaType: 'MOVIE' | 'SERIES';
+  mediaType: MediaType;
   year: string;
   runtimeMins: number | null;
   genres: string;

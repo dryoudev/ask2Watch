@@ -2,7 +2,9 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { WatchedMediaResponse, UpdateWatchedRequest } from '../../shared/models/watched.model';
-import { MediaResponse } from '../../shared/models/media.model';
+import { MediaResponse, MediaType } from '../../shared/models/media.model';
+import { RecommendationDto } from '../../shared/models/recommendation.model';
+import { CsvImportResponse } from '../../shared/models/csv-import.model';
 
 @Injectable({ providedIn: 'root' })
 export class MediaService {
@@ -23,5 +25,21 @@ export class MediaService {
 
   getMediaById(id: number): Observable<MediaResponse> {
     return this.http.get<MediaResponse>(`/api/media/${id}`);
+  }
+
+  getTrending(limit: number = 10): Observable<MediaResponse[]> {
+    return this.http.get<MediaResponse[]>(`/api/media/trending?limit=${limit}`);
+  }
+
+  getRecommendations(limit: number = 5): Observable<RecommendationDto[]> {
+    return this.http.get<RecommendationDto[]>(`/api/media/recommendations?limit=${limit}`);
+  }
+
+  importCsv(file: File, type: MediaType): Observable<CsvImportResponse> {
+    const data = new FormData();
+    data.append('file', file);
+    data.append('type', type);
+
+    return this.http.post<CsvImportResponse>('/api/media/import/csv', data);
   }
 }

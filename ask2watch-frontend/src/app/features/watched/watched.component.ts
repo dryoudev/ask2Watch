@@ -1,10 +1,13 @@
 import { Component, computed, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { AppHeaderComponent } from '../../shared/components/app-header/app-header.component';
 import { MovieCardComponent } from '../../shared/components/movie-card/movie-card.component';
 import { MediaDetailDialogComponent } from '../../shared/components/media-detail-dialog/media-detail-dialog.component';
 import { MediaService } from '../../core/services/media.service';
 import { WatchedMediaResponse } from '../../shared/models/watched.model';
+import { CsvImportError, CsvImportSummary } from '../../shared/models/csv-import.model';
+import { MediaType } from '../../shared/models/media.model';
 
 @Component({
   selector: 'app-watched',
@@ -23,6 +26,12 @@ export class WatchedComponent implements OnInit {
   series = signal<WatchedMediaResponse[]>([]);
   selectedItem = signal<WatchedMediaResponse | null>(null);
   dialogOpen = signal(false);
+  uploadType = signal<MediaType>('MOVIE');
+  uploadFile = signal<File | null>(null);
+  uploadStatus = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
+  uploadMessage = signal('');
+  uploadSummary = signal<CsvImportSummary | null>(null);
+  uploadErrors = signal<CsvImportError[]>([]);
 
   private applySortAndFilter(items: WatchedMediaResponse[]): WatchedMediaResponse[] {
     let result = [...items];
@@ -72,14 +81,8 @@ export class WatchedComponent implements OnInit {
   constructor(private mediaService: MediaService) {}
 
   ngOnInit(): void {
-    this.mediaService.getWatchedMovies().subscribe({
-      next: (data) => this.movies.set(data),
-      error: (err) => console.error('Error loading movies:', err),
-    });
-    this.mediaService.getWatchedSeries().subscribe({
-      next: (data) => this.series.set(data),
-      error: (err) => console.error('Error loading series:', err),
-    });
+    this.loadMovies();
+    this.loadSeries();
   }
 
   onItemClick(item: WatchedMediaResponse): void {
@@ -109,5 +112,78 @@ export class WatchedComponent implements OnInit {
         item.watchedId === event.watchedId ? { ...item, userRating: event.newRating } : item
       )
     );
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.uploadFile.set(file);
+    this.uploadStatus.set('idle');
+    this.uploadMessage.set(file ? `${file.name} selected` : '');
+    this.uploadSummary.set(null);
+    this.uploadErrors.set([]);
+  }
+
+  triggerUpload(): void {
+    const file = this.uploadFile();
+    if (!file) {
+      this.uploadStatus.set('error');
+      this.uploadMessage.set('Select a CSV file before importing.');
+      return;
+    }
+
+    this.uploadStatus.set('loading');
+    this.uploadMessage.set('Import in progress...');
+    this.uploadSummary.set(null);
+    this.uploadErrors.set([]);
+
+    this.mediaService.importCsv(file, this.uploadType()).subscribe({
+      next: (response) => {
+        this.uploadStatus.set('success');
+        this.uploadMessage.set(response.message);
+        this.uploadSummary.set(response.summary);
+        this.uploadErrors.set(response.errors);
+        this.refreshWatchedList(this.uploadType());
+      },
+      error: (error: HttpErrorResponse) => {
+        this.uploadStatus.set('error');
+        this.uploadSummary.set(null);
+        this.uploadErrors.set([]);
+        this.uploadMessage.set(this.extractErrorMessage(error));
+      },
+    });
+  }
+
+  private loadMovies(): void {
+    this.mediaService.getWatchedMovies().subscribe({
+      next: (data) => this.movies.set(data),
+      error: () => this.movies.set([]),
+    });
+  }
+
+  private loadSeries(): void {
+    this.mediaService.getWatchedSeries().subscribe({
+      next: (data) => this.series.set(data),
+      error: () => this.series.set([]),
+    });
+  }
+
+  private refreshWatchedList(type: MediaType): void {
+    if (type === 'MOVIE') {
+      this.loadMovies();
+      return;
+    }
+    this.loadSeries();
+  }
+
+  private extractErrorMessage(error: HttpErrorResponse): string {
+    const payload = error.error;
+    if (typeof payload?.error === 'string') {
+      return payload.error;
+    }
+    if (typeof payload?.message === 'string') {
+      return payload.message;
+    }
+    return 'CSV import failed.';
   }
 }

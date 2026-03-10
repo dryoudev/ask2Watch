@@ -2,8 +2,7 @@ package com.ask2watch.service;
 
 import com.ask2watch.dto.agent.ChatMessage;
 import com.ask2watch.dto.agent.ChatResponse;
-import com.ask2watch.dto.media.MediaResponse;
-import com.ask2watch.dto.media.WatchedMediaResponse;
+import com.ask2watch.dto.media.*;
 import com.ask2watch.model.MediaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,6 +26,7 @@ public class AgentService {
     private final WebClient anthropicClient;
     private final WebClient tmdbClient;
     private final MediaService mediaService;
+    private final PickService pickService;
     private final ObjectMapper objectMapper;
     private final String model;
     private final String tmdbApiKey;
@@ -40,10 +40,12 @@ public class AgentService {
             @Value("${anthropic.model}") String model,
             @Value("${tmdb.api-key}") String tmdbApiKey,
             MediaService mediaService,
+            PickService pickService,
             ObjectMapper objectMapper) {
         this.model = model;
         this.tmdbApiKey = tmdbApiKey;
         this.mediaService = mediaService;
+        this.pickService = pickService;
         this.objectMapper = objectMapper;
 
         this.anthropicClient = WebClient.builder()
@@ -66,7 +68,7 @@ public class AgentService {
         trimHistory(history);
 
         String systemPrompt = buildSystemPrompt(userId);
-        String responseText = callClaude(systemPrompt, history);
+        String responseText = callClaude(userId, systemPrompt, history);
 
         history.add(new ChatMessage("assistant", responseText));
         return ChatResponse.builder().message(responseText).suggestedMedia(null).build();
@@ -78,13 +80,36 @@ public class AgentService {
 
     private String buildSystemPrompt(Long userId) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Tu es un expert en cinéma et séries TV. Tu aides l'utilisateur à choisir quoi regarder.\n\n");
-        sb.append("INSTRUCTIONS:\n");
-        sb.append("- Pose 2-3 questions pour comprendre l'humeur et les envies de l'utilisateur\n");
-        sb.append("- Puis suggère 5-6 titres avec une courte raison pour chacun\n");
-        sb.append("- Ne recommande JAMAIS un titre déjà vu par l'utilisateur\n");
-        sb.append("- Utilise les outils TMDB pour chercher des films/séries pertinents\n");
-        sb.append("- Réponds en français si l'utilisateur écrit en français, sinon en anglais\n\n");
+        sb.append("""
+                Tu es Dobby, l'elfe de maison dévoué au service du Maître. \
+                Tu utilises les outils TMDB pour servir le Maître dans sa quête cinématographique.
+
+                ## Personnalité
+                - Parler comme Dobby : "Dobby a trouvé ces films pour le Maître !"
+                - Toujours vouvoyer le Maître (vous/votre)
+                - Humble, enthousiaste, loyal, dévoué
+                - Répondre en français par défaut
+                - Court et direct, pas de bavardage inutile
+
+                ## Règles de dialogue (obligatoires)
+                1. Clarifier l'intention en 1 question max si nécessaire.
+                2. Maximum 3 à 5 recommandations à la fois.
+                   Format : **Titre** (année) — ★ note IMDb — raison courte
+                3. Jamais de spoilers.
+                4. Sans contrainte du Maître : exclure les films déjà vus, min IMDb 7.0
+                5. Pour analyser les goûts du Maître : se baser sur les commentaires existants et les notes données
+                6. Utilise les outils TMDB pour chercher des films/séries pertinents
+                7. Quand tu fais des recommandations, mentionne brièvement que tu t'es basé sur les notes et commentaires du Maître pour personnaliser tes suggestions (ex: "Dobby a étudié vos notes et commentaires pour affiner ses recommandations !"). Encourage le Maître à noter et commenter ses films pour que Dobby puisse mieux le servir.
+
+                ## Règles d'écriture (CRUD)
+                - Avant d'ajouter un film aux vus ou aux picks : confirmer le titre exact avec le Maître.
+                - Avant de supprimer : toujours demander la permission du Maître.
+                - Pour les picks : proposer avec raison, attendre la validation du Maître.
+                - Ne jamais modifier la note sans que le Maître l'ait expressément demandé.
+                - Tu peux ajouter des picks, ajouter/retirer des films vus, noter et commenter des films directement.
+
+                """);
+
 
         sb.append("FILMS/SÉRIES DÉJÀ VUS PAR L'UTILISATEUR:\n");
         try {
@@ -111,7 +136,7 @@ public class AgentService {
         return sb.toString();
     }
 
-    private String callClaude(String systemPrompt, List<ChatMessage> messages) {
+    private String callClaude(Long userId, String systemPrompt, List<ChatMessage> messages) {
         try {
             ObjectNode requestBody = objectMapper.createObjectNode();
             requestBody.put("model", model);
@@ -138,21 +163,21 @@ public class AgentService {
                     .bodyToMono(String.class)
                     .block();
 
-            return processResponse(responseJson, systemPrompt, messages);
+            return processResponse(userId, responseJson, systemPrompt, messages);
         } catch (Exception e) {
             log.error("Claude API call failed", e);
             return "Désolé, je ne peux pas répondre pour le moment. Veuillez réessayer.";
         }
     }
 
-    private String processResponse(String responseJson, String systemPrompt, List<ChatMessage> messages) {
+    private String processResponse(Long userId, String responseJson, String systemPrompt, List<ChatMessage> messages) {
         try {
             JsonNode response = objectMapper.readTree(responseJson);
             String stopReason = response.path("stop_reason").asText();
             JsonNode contentArray = response.path("content");
 
             if ("tool_use".equals(stopReason)) {
-                return handleToolUse(contentArray, systemPrompt, messages);
+                return handleToolUse(userId, contentArray, systemPrompt, messages);
             }
 
             StringBuilder text = new StringBuilder();
@@ -168,7 +193,7 @@ public class AgentService {
         }
     }
 
-    private String handleToolUse(JsonNode contentArray, String systemPrompt, List<ChatMessage> messages) {
+    private String handleToolUse(Long userId, JsonNode contentArray, String systemPrompt, List<ChatMessage> messages) {
         List<Object> assistantContent = new ArrayList<>();
         List<Object> toolResults = new ArrayList<>();
 
@@ -188,7 +213,7 @@ public class AgentService {
                         "input", objectMapper.convertValue(input, Map.class)
                 ));
 
-                String result = executeTool(toolName, input);
+                String result = executeTool(userId, toolName, input);
                 toolResults.add(Map.of(
                         "type", "tool_result",
                         "tool_use_id", toolId,
@@ -200,12 +225,13 @@ public class AgentService {
         messages.add(new ChatMessage("assistant", assistantContent));
         messages.add(new ChatMessage("user", toolResults));
 
-        return callClaude(systemPrompt, messages);
+        return callClaude(userId, systemPrompt, messages);
     }
 
-    private String executeTool(String toolName, JsonNode input) {
+    private String executeTool(Long userId, String toolName, JsonNode input) {
         try {
             return switch (toolName) {
+                // TMDB search tools
                 case "search_movie" -> tmdbSearch("/search/movie", input.path("query").asText(),
                         input.has("year") ? input.path("year").asInt() : null);
                 case "search_tv" -> tmdbSearch("/search/tv", input.path("query").asText(),
@@ -213,11 +239,111 @@ public class AgentService {
                 case "get_trending" -> tmdbTrending(input.path("media_type").asText(), input.path("time_window").asText());
                 case "get_recommendations" -> tmdbRecommendations(input.path("tmdb_id").asInt(), input.path("media_type").asText());
                 case "discover" -> tmdbDiscover(input);
+                // CRUD tools
+                case "add_pick" -> addPick(userId, input);
+                case "add_to_watched" -> addToWatched(userId, input);
+                case "rate_watched" -> rateWatched(userId, input);
+                case "comment_watched" -> commentWatched(userId, input);
+                case "remove_from_watched" -> removeFromWatched(userId, input);
+                case "remove_pick" -> removePick(userId, input);
+                case "get_watched_movies" -> getWatchedByType(userId, "MOVIE");
+                case "get_watched_series" -> getWatchedByType(userId, "SERIES");
+                case "get_current_picks" -> getCurrentPicks(userId);
                 default -> "Unknown tool: " + toolName;
             };
         } catch (Exception e) {
             log.error("Tool execution failed for {}", toolName, e);
-            return "Error executing tool";
+            return "Error: " + e.getMessage();
+        }
+    }
+
+    // --- CRUD tool implementations ---
+
+    private String addPick(Long userId, JsonNode input) {
+        PickRequest request = PickRequest.builder()
+                .tmdbId(input.path("tmdb_id").asLong())
+                .mediaType(MediaType.valueOf(input.path("media_type").asText().toUpperCase()))
+                .title(input.path("title").asText())
+                .reason(input.path("reason").asText())
+                .build();
+        PickResponse response = pickService.addPick(userId, request);
+        return "Pick ajouté: " + response.getMedia().getTitle() + " (pick_id=" + response.getPickId() + ")";
+    }
+
+    private String addToWatched(Long userId, JsonNode input) {
+        AddWatchedRequest request = AddWatchedRequest.builder()
+                .tmdbId(input.path("tmdb_id").asLong())
+                .mediaType(MediaType.valueOf(input.path("media_type").asText().toUpperCase()))
+                .title(input.path("title").asText())
+                .build();
+        WatchedMediaResponse response = mediaService.addToWatched(userId, request);
+        return "Ajouté à la liste: " + response.getMedia().getTitle() + " (watched_id=" + response.getWatchedId() + ")";
+    }
+
+    private String rateWatched(Long userId, JsonNode input) {
+        Long watchedId = input.path("watched_id").asLong();
+        UpdateWatchedRequest request = UpdateWatchedRequest.builder()
+                .userRating(input.path("rating").asInt())
+                .build();
+        WatchedMediaResponse response = mediaService.updateWatched(userId, watchedId, request);
+        return "Note mise à jour: " + response.getMedia().getTitle() + " → " + response.getUserRating() + "/10";
+    }
+
+    private String commentWatched(Long userId, JsonNode input) {
+        Long watchedId = input.path("watched_id").asLong();
+        UpdateWatchedRequest request = UpdateWatchedRequest.builder()
+                .comment(input.path("comment").asText())
+                .build();
+        WatchedMediaResponse response = mediaService.updateWatched(userId, watchedId, request);
+        return "Commentaire mis à jour: " + response.getMedia().getTitle();
+    }
+
+    private String removeFromWatched(Long userId, JsonNode input) {
+        Long watchedId = input.path("watched_id").asLong();
+        mediaService.removeFromWatched(userId, watchedId);
+        return "Film retiré de la liste (watched_id=" + watchedId + ")";
+    }
+
+    private String removePick(Long userId, JsonNode input) {
+        Long pickId = input.path("pick_id").asLong();
+        pickService.removePick(userId, pickId);
+        return "Pick retiré (pick_id=" + pickId + ")";
+    }
+
+    private String getWatchedByType(Long userId, String type) {
+        try {
+            List<WatchedMediaResponse> list = mediaService.getWatchedByType(userId, MediaType.valueOf(type));
+            ArrayNode results = objectMapper.createArrayNode();
+            for (WatchedMediaResponse w : list) {
+                ObjectNode node = objectMapper.createObjectNode();
+                node.put("watched_id", w.getWatchedId());
+                node.put("title", w.getMedia().getTitle());
+                node.put("tmdb_id", w.getMedia().getTmdbId());
+                if (w.getUserRating() != null) node.put("rating", w.getUserRating());
+                if (w.getComment() != null) node.put("comment", w.getComment());
+                if (w.getDateWatched() != null) node.put("date_watched", w.getDateWatched());
+                results.add(node);
+            }
+            return objectMapper.writeValueAsString(results);
+        } catch (Exception e) {
+            return "Error: " + e.getMessage();
+        }
+    }
+
+    private String getCurrentPicks(Long userId) {
+        try {
+            List<PickResponse> picks = pickService.getCurrentPicks(userId);
+            ArrayNode results = objectMapper.createArrayNode();
+            for (PickResponse p : picks) {
+                ObjectNode node = objectMapper.createObjectNode();
+                node.put("pick_id", p.getPickId());
+                node.put("title", p.getMedia().getTitle());
+                node.put("tmdb_id", p.getMedia().getTmdbId());
+                results.add(node);
+            }
+            return objectMapper.writeValueAsString(results);
+        } catch (Exception e) {
+            return "Error: " + e.getMessage();
         }
     }
 
@@ -320,6 +446,47 @@ public class AgentService {
                         "year_max", prop("integer", "Maximum release year"),
                         "rating_min", prop("number", "Minimum vote average 0-10")),
                 List.of("media_type")));
+
+        // CRUD tools
+        tools.add(buildTool("add_pick", "Ajouter un film/série dans les Picks de la semaine du Maître",
+                Map.of("tmdb_id", prop("integer", "TMDB ID du film ou série"),
+                        "media_type", enumProp("string", List.of("MOVIE", "TV_SERIES"), "Type"),
+                        "title", prop("string", "Titre du film ou série"),
+                        "reason", prop("string", "Raison du pick")),
+                List.of("tmdb_id", "media_type", "title", "reason")));
+
+        tools.add(buildTool("add_to_watched", "Ajouter un film/série à la liste des vus du Maître",
+                Map.of("tmdb_id", prop("integer", "TMDB ID du film ou série"),
+                        "media_type", enumProp("string", List.of("MOVIE", "TV_SERIES"), "Type"),
+                        "title", prop("string", "Titre du film ou série")),
+                List.of("tmdb_id", "media_type", "title")));
+
+        tools.add(buildTool("rate_watched", "Mettre ou modifier la note d'un film/série déjà vu (0-10)",
+                Map.of("watched_id", prop("integer", "ID de l'entrée watched"),
+                        "rating", prop("integer", "Note de 0 à 10")),
+                List.of("watched_id", "rating")));
+
+        tools.add(buildTool("comment_watched", "Ajouter ou modifier le commentaire d'un film/série déjà vu",
+                Map.of("watched_id", prop("integer", "ID de l'entrée watched"),
+                        "comment", prop("string", "Commentaire du Maître")),
+                List.of("watched_id", "comment")));
+
+        tools.add(buildTool("remove_from_watched", "Retirer un film/série de la liste des vus du Maître",
+                Map.of("watched_id", prop("integer", "ID de l'entrée watched")),
+                List.of("watched_id")));
+
+        tools.add(buildTool("remove_pick", "Retirer un pick de la semaine",
+                Map.of("pick_id", prop("integer", "ID du pick")),
+                List.of("pick_id")));
+
+        tools.add(buildTool("get_watched_movies", "Consulter la liste des films vus par le Maître avec notes et commentaires",
+                Map.of(), List.of()));
+
+        tools.add(buildTool("get_watched_series", "Consulter la liste des séries vues par le Maître avec notes et commentaires",
+                Map.of(), List.of()));
+
+        tools.add(buildTool("get_current_picks", "Consulter les picks de la semaine actuelle du Maître",
+                Map.of(), List.of()));
 
         return tools;
     }

@@ -17,9 +17,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @Service
@@ -85,19 +82,18 @@ public class CsvImportService {
         int imported = 0;
         for (CsvMediaRow row : rows) {
             try {
-                if ("Video".equalsIgnoreCase(row.getTitleType())) {
+                if (!CsvImportHelper.isRowSupported(row.getTitleType(), type)) {
+                    log.debug("Skipping '{}' because title type '{}' is not handled for {}", row.getTitle(), row.getTitleType(), type);
                     continue;
                 }
                 if (mediaRepository.findByImdbId(row.getImdbId()).isPresent()) {
                     continue;
                 }
 
-                Media media = mapToMedia(row, type);
+                Media media = CsvImportHelper.mapToMedia(row, type);
                 tmdbService.enrichMedia(media);
                 mediaRepository.save(media);
                 imported++;
-
-                Thread.sleep(250);
             } catch (Exception e) {
                 log.warn("Failed to import '{}': {}", row.getTitle(), e.getMessage());
             }
@@ -107,22 +103,6 @@ public class CsvImportService {
         return imported;
     }
 
-    private Media mapToMedia(CsvMediaRow row, MediaType type) {
-        return Media.builder()
-                .imdbId(row.getImdbId())
-                .title(row.getTitle())
-                .originalTitle(row.getOriginalTitle())
-                .mediaType(type)
-                .year(row.getYear())
-                .runtimeMins(parseInteger(row.getRuntimeMins()))
-                .genres(row.getGenres())
-                .imdbRating(parseBigDecimal(row.getImdbRating()))
-                .numVotes(parseInteger(row.getNumVotes()))
-                .releaseDate(parseDate(row.getReleaseDate()))
-                .directors(blankToNull(row.getDirectors()))
-                .imdbUrl(row.getUrl())
-                .build();
-    }
 
     private User createDefaultUser() {
         return userRepository.findByEmail("admin@ask2watch.com")
@@ -149,34 +129,4 @@ public class CsvImportService {
         log.info("Linked {} media to user '{}'", allMedia.size(), user.getUsername());
     }
 
-    private Integer parseInteger(String value) {
-        if (value == null || value.isBlank()) return null;
-        try {
-            return Integer.parseInt(value.trim());
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private BigDecimal parseBigDecimal(String value) {
-        if (value == null || value.isBlank()) return null;
-        try {
-            return new BigDecimal(value.trim());
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private LocalDate parseDate(String value) {
-        if (value == null || value.isBlank()) return null;
-        try {
-            return LocalDate.parse(value.trim());
-        } catch (DateTimeParseException e) {
-            return null;
-        }
-    }
-
-    private String blankToNull(String value) {
-        return (value == null || value.isBlank()) ? null : value.trim();
-    }
 }

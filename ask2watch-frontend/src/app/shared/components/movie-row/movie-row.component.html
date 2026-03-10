@@ -14,28 +14,33 @@
 
   <div class="relative group/row">
     <!-- Left scroll button -->
-    <button (click)="scroll('left')"
-            class="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-background/70 backdrop-blur rounded-md p-2
-                   opacity-0 group-hover/row:opacity-100 transition-opacity cursor-pointer">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="m15 18-6-6 6-6"/>
-      </svg>
-    </button>
+    @if (canScrollLeft()) {
+      <button (click)="scroll('left')"
+              class="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-background/70 backdrop-blur rounded-md p-2
+                     opacity-0 group-hover/row:opacity-100 transition-opacity cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="m15 18-6-6 6-6"/>
+        </svg>
+      </button>
+    }
 
     <!-- Scroll container -->
     <div #scrollContainer
-         class="flex gap-4 overflow-x-auto px-8 md:px-[max(2rem,calc((100vw-1400px)/2+2rem))] pb-4 scrollbar-hide"
-         style="scroll-behavior: smooth">
+         class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide container"
+         style="scroll-behavior: smooth"
+         (scroll)="updateScrollState()">
       <ng-content />
     </div>
 
     <!-- Right scroll button -->
-    <button (click)="scroll('right')"
-            class="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-background/70 backdrop-blur rounded-md p-2
-                   opacity-0 group-hover/row:opacity-100 transition-opacity cursor-pointer">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="m9 18 6-6-6-6"/>
-      </svg>
-    </button>
+    @if (canScrollRight()) {
+      <button (click)="scroll('right')"
+              class="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-background/70 backdrop-blur rounded-md p-2
+                     opacity-0 group-hover/row:opacity-100 transition-opacity cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="m9 18 6-6-6-6"/>
+        </svg>
+      </button>
+    }
   </div>
 </section>

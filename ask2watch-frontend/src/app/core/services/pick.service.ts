@@ -15,4 +15,8 @@ export class PickService {
   getAllPicks(): Observable<PickResponse[]> {
     return this.http.get<PickResponse[]>('/api/picks');
   }
+
+  addPick(pick: { tmdbId: number; mediaType: string; title: string; reason: string }): Observable<PickResponse> {
+    return this.http.post<PickResponse>('/api/picks', pick);
+  }
 }

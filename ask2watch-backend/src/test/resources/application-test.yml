@@ -12,11 +12,12 @@ spring:
       max-lifetime: 1800000
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
     show-sql: false
   sql:
     init:
-      mode: never
+      mode: always
+      separator: //
 
 jwt:
   secret: test-secret-key-minimum-32-characters-long!!

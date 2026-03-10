@@ -115,3 +115,11 @@
 - [ ] 8.6 Test E2E scenario complet
 - [ ] 8.7 Validation finale
 - [ ] 8.8 Nettoyage final (supprimer cine-picks-main, watchedList, etc.)
+
+## Phase 9 : Enum SQL, tests, CSV import manuel + upload frontend
+
+- [x] 9.1 media.media_type -> enum PostgreSQL + JPA mapping & persistence tests (MediaTypePersistenceIT)
+- [~] 9.2 Stabiliser les tests backend (`MediaControllerIT` still expects different error codes/ratings)
+- [x] 9.3 `UserCsvImportService`, endpoint `/api/media/import/csv`, CSV fixtures + integration tests (MediaCsvImportIT & UserCsvImportServiceIT)
+- [x] 9.4 Frontend button + service + specs + cleanup (watched upload UI + tests)
+- [x] 9.5 Documentation mise à jour (`plan/README.md`, `plan/PROGRESS.md`, phase 9 realisation)

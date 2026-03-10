@@ -29,6 +29,7 @@ Le plan est decoupe en 8 phases, chacune dans un fichier separe :
 | 6 | [phase-6-angular-ui.md](phase-6-angular-ui.md) | Composants UI Angular (port du React) |
 | 7 | [phase-7-mcp-agent.md](phase-7-mcp-agent.md) | Agent Claude + MCP server TMDB |
 | 8 | [phase-8-chat-picks.md](phase-8-chat-picks.md) | Chat UI Angular + picks integration |
+| 9 | [phase-9-db-enum-tests-csv-upload-plan.md](phase-9-db-enum-tests-csv-upload-plan.md) | Enum SQL, tests stabiles, import CSV manuel + upload Angular |
 
 ## Suivi d'avancement
 

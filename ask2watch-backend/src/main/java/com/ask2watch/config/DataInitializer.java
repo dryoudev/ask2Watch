@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(name = "app.csv-import.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "app.csv-import.enabled", havingValue = "true")
 public class DataInitializer implements CommandLineRunner {
 
     private final CsvImportService csvImportService;

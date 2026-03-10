@@ -1,0 +1,136 @@
+/* Animations */
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bounce-custom {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+:global(.animate-slide-in) {
+  animation: slide-in 0.6s ease-out;
+}
+
+:global(.animate-slide-up) {
+  animation: slide-up 0.3s ease-out;
+}
+
+:global(.animate-fade-in) {
+  animation: fade-in 0.8s ease-out 0.2s both;
+}
+
+:global(.animate-bounce) {
+  animation: bounce-custom 1s infinite;
+}
+
+:global(.animate-pulse-slow) {
+  animation: pulse-slow 2s ease-in-out infinite;
+}
+
+:global(.delay-100) {
+  animation-delay: 0.1s;
+}
+
+:global(.delay-200) {
+  animation-delay: 0.2s;
+}
+
+/* Smooth scrolling */
+:global(.scroll-smooth) {
+  scroll-behavior: smooth;
+}
+
+/* Chat styles */
+:local(.chat-container) {
+  backdrop-filter: blur(10px);
+}
+
+/* Gradient text */
+:global(.bg-clip-text) {
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Hero gradient animations */
+@media (prefers-reduced-motion: no-preference) {
+  :global(.bg-gradient-to-r) {
+    background-size: 200% 200%;
+    animation: gradient 8s ease infinite;
+  }
+
+  @keyframes gradient {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+}
+
+/* Hover effects */
+:global(.group:hover .group-hover\:scale-105) {
+  transform: scale(1.05);
+}
+
+/* Fixed button scale effect */
+:global(.scale-110) {
+  transform: scale(1.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  :global(.w-96) {
+    width: 100vw;
+    max-width: calc(100vw - 24px);
+  }
+
+  :global(.h-\[500px\]) {
+    height: 60vh;
+  }
+}

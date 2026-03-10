@@ -1,9 +1,49 @@
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'media_type_enum') THEN
+        EXECUTE 'CREATE TYPE media_type_enum AS ENUM (''MOVIE'', ''SERIES'')';
+    END IF;
+END;
+$$
+//
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_cast c
+        JOIN pg_type src ON c.castsource = src.oid
+        JOIN pg_type tgt ON c.casttarget = tgt.oid
+        WHERE src.typname = 'varchar' AND tgt.typname = 'media_type_enum'
+    ) THEN
+        EXECUTE 'CREATE CAST (varchar AS media_type_enum) WITH INOUT AS IMPLICIT';
+    END IF;
+END;
+$$
+//
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_cast c
+        JOIN pg_type src ON c.castsource = src.oid
+        JOIN pg_type tgt ON c.casttarget = tgt.oid
+        WHERE src.typname = 'text' AND tgt.typname = 'media_type_enum'
+    ) THEN
+        EXECUTE 'CREATE CAST (text AS media_type_enum) WITH INOUT AS IMPLICIT';
+    END IF;
+END;
+$$
+//
+
 CREATE TABLE IF NOT EXISTS users (
     id BIGSERIAL PRIMARY KEY,
     username VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL
 );
+//
 
 CREATE TABLE IF NOT EXISTS media (
     id BIGSERIAL PRIMARY KEY,
@@ -11,7 +51,7 @@ CREATE TABLE IF NOT EXISTS media (
     tmdb_id INT UNIQUE,
     title VARCHAR(500) NOT NULL,
     original_title VARCHAR(500),
-    media_type VARCHAR(10) NOT NULL CHECK (media_type IN ('MOVIE', 'SERIES')),
+    media_type media_type_enum NOT NULL,
     year VARCHAR(20),
     runtime_mins INT,
     genres VARCHAR(500),
@@ -26,6 +66,7 @@ CREATE TABLE IF NOT EXISTS media (
     seasons INT,
     imdb_url VARCHAR(500)
 );
+//
 
 CREATE TABLE IF NOT EXISTS user_watched (
     id BIGSERIAL PRIMARY KEY,
@@ -36,6 +77,7 @@ CREATE TABLE IF NOT EXISTS user_watched (
     comment TEXT,
     UNIQUE(user_id, media_id)
 );
+//
 
 CREATE TABLE IF NOT EXISTS picks_of_week (
     id BIGSERIAL PRIMARY KEY,
@@ -44,3 +86,4 @@ CREATE TABLE IF NOT EXISTS picks_of_week (
     week_date DATE NOT NULL,
     created_by_agent BOOLEAN DEFAULT false
 );
+//

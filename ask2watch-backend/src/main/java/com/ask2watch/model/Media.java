@@ -3,6 +3,8 @@ package com.ask2watch.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import org.hibernate.annotations.ColumnTransformer;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -32,7 +34,8 @@ public class Media {
     private String originalTitle;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "media_type", nullable = false, length = 10)
+    @ColumnTransformer(write = "?::media_type_enum")
+    @Column(name = "media_type", nullable = false, columnDefinition = "media_type_enum")
     private MediaType mediaType;
 
     @Column(length = 20)

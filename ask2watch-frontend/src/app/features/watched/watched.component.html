@@ -2,6 +2,94 @@
 
 <div class="min-h-screen pb-16">
   <div class="container pt-24 space-y-6">
+    <section class="rounded-2xl border border-border/50 bg-muted/20 p-4 sm:p-5 space-y-4">
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div class="space-y-1">
+          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">CSV import</p>
+          <h2 class="text-lg font-semibold">Importer votre historique IMDb</h2>
+          <p class="text-sm text-muted-foreground">
+            Chargez un CSV exporté par IMDb. Les lignes `TV Series` et `TV Mini Series` sont importées comme séries.
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <label class="cursor-pointer rounded-lg border border-border/60 bg-background px-4 py-2.5 text-sm font-medium hover:border-primary/50">
+            <input type="file" accept=".csv,text/csv" class="sr-only" (change)="onFileSelected($event)" />
+            Choisir un CSV
+          </label>
+
+          <select [(ngModel)]="uploadType" class="rounded-lg border border-border/60 bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer">
+            <option value="MOVIE">Films</option>
+            <option value="SERIES">Series</option>
+          </select>
+
+          <button
+            type="button"
+            class="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+            [disabled]="uploadStatus() === 'loading'"
+            (click)="triggerUpload()">
+            @if (uploadStatus() === 'loading') {
+              Import...
+            } @else {
+              Importer un CSV
+            }
+          </button>
+        </div>
+      </div>
+
+      @if (uploadFile()) {
+        <p class="text-sm text-muted-foreground">Fichier sélectionné : {{ uploadFile()?.name }}</p>
+      }
+
+      @if (uploadMessage()) {
+        <div class="rounded-xl px-4 py-3 text-sm"
+             [class.bg-emerald-500/10]="uploadStatus() === 'success'"
+             [class.text-emerald-200]="uploadStatus() === 'success'"
+             [class.bg-rose-500/10]="uploadStatus() === 'error'"
+             [class.text-rose-200]="uploadStatus() === 'error'"
+             [class.bg-sky-500/10]="uploadStatus() === 'loading'"
+             [class.text-sky-100]="uploadStatus() === 'loading'">
+          {{ uploadMessage() }}
+        </div>
+      }
+
+      @if (uploadSummary()) {
+        <div class="grid gap-3 sm:grid-cols-5">
+          <div class="rounded-xl border border-border/50 bg-background/70 p-3">
+            <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Lignes</p>
+            <p class="mt-1 text-xl font-semibold">{{ uploadSummary()?.totalLines }}</p>
+          </div>
+          <div class="rounded-xl border border-border/50 bg-background/70 p-3">
+            <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Importés</p>
+            <p class="mt-1 text-xl font-semibold">{{ uploadSummary()?.imported }}</p>
+          </div>
+          <div class="rounded-xl border border-border/50 bg-background/70 p-3">
+            <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Ignorés</p>
+            <p class="mt-1 text-xl font-semibold">{{ uploadSummary()?.skipped }}</p>
+          </div>
+          <div class="rounded-xl border border-border/50 bg-background/70 p-3">
+            <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Doublons</p>
+            <p class="mt-1 text-xl font-semibold">{{ uploadSummary()?.duplicates }}</p>
+          </div>
+          <div class="rounded-xl border border-border/50 bg-background/70 p-3">
+            <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Erreurs</p>
+            <p class="mt-1 text-xl font-semibold">{{ uploadSummary()?.errors }}</p>
+          </div>
+        </div>
+      }
+
+      @if (uploadErrors().length > 0) {
+        <div class="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4">
+          <h3 class="text-sm font-semibold text-rose-100">Lignes en erreur</h3>
+          <ul class="mt-3 space-y-2 text-sm text-rose-50">
+            @for (error of uploadErrors(); track error.lineNumber + '-' + error.title) {
+              <li>Line {{ error.lineNumber }} - {{ error.title }} : {{ error.reason }}</li>
+            }
+          </ul>
+        </div>
+      }
+    </section>
+
     <!-- Header: Tabs | Search | Filters -->
     <div class="flex items-center justify-center gap-4">
       <!-- Tabs (left) -->

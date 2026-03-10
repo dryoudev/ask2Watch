@@ -1,0 +1,31 @@
+<div [class]="'group animate-fade-in cursor-pointer ' + (compact() ? 'w-[160px] flex-shrink-0' : '')"
+     [style.animation-delay]="delay"
+     [style.opacity]="0"
+     [title]="recommendation()?.reason"
+     (click)="onCardClick()">
+  <div class="relative overflow-hidden rounded-lg card-hover">
+    <img [src]="poster" [alt]="media().title"
+         class="w-full aspect-[2/3] object-cover" loading="lazy" />
+    <!-- IMDb Rating Badge -->
+    @if (media().imdbRating) {
+      <div class="absolute top-2 right-2 bg-gold text-gold-foreground px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1">
+        <span>★</span>
+        <span>{{ media().imdbRating }}</span>
+      </div>
+    }
+    <!-- Source Badge -->
+    @if (source) {
+      <div [class]="'absolute top-2 left-2 ' + sourceColor + ' text-white px-2 py-1 rounded-md text-xs font-semibold'">
+        {{ source }}
+      </div>
+    }
+    <div class="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+  </div>
+  <div class="mt-2 space-y-1">
+    <h3 class="text-sm font-semibold leading-tight line-clamp-1">{{ media().title }}</h3>
+    <p class="text-xs text-muted-foreground line-clamp-2">{{ media().synopsis }}</p>
+    @if (recommendation()) {
+      <p class="text-xs text-muted-foreground italic">{{ recommendation()!.reason }}</p>
+    }
+  </div>
+</div>

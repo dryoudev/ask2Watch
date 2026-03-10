@@ -98,6 +98,18 @@
           </div>
         }
 
+        <!-- Recommendation Info -->
+        @if (isRecommendation && recommendation) {
+          <div class="border-t border-border pt-3 mt-3">
+            <p class="text-xs text-muted-foreground mb-3">
+              <strong>{{ recommendation.source }}</strong> - {{ recommendation.reason }}
+            </p>
+            <button (click)="addToPick()" class="w-full bg-primary text-primary-foreground text-sm px-3 py-2 rounded-lg cursor-pointer hover:bg-primary/90 transition">
+              Ajouter en Pick
+            </button>
+          </div>
+        }
+
         <!-- Comment -->
         @if (isWatched) {
           <div class="border-t border-border pt-3 mt-3">
